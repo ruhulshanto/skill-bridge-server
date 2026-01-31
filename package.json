@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "prisma generate",
     "dev": "pnpm exec tsx watch src/server.ts",
     "db:seed": "npx prisma db seed"
   },
