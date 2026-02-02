@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { auth } from "../lib/auth";
 import { getHeadersInit } from "../lib/request";
@@ -6,7 +6,7 @@ import { getHeadersInit } from "../lib/request";
 const router: Router = Router();
 
 // GET /api/tutors - Get all tutors with filters
-router.get("/", async (req, res) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const {
       category,
@@ -125,7 +125,7 @@ router.get("/", async (req, res) => {
 });
 
 // GET /api/tutors/:id - Get tutor by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -191,7 +191,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // PUT /api/tutors/profile - Update tutor profile (protected)
-router.put("/profile", async (req, res) => {
+router.put("/profile", async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({
       headers: getHeadersInit(req.headers),

@@ -1,4 +1,4 @@
-import express, { Application } from "express";
+import express, { Application, Request, Response } from "express";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth";
 import cors from "cors";
@@ -47,7 +47,7 @@ app.use("/api/reviews", reviewsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/student", studentRouter);
 
-app.get("/", (req, res) => {
+app.get("/", (req: Request, res: Response) => {
     res.send("SkillBridge Server Running");
 });
 

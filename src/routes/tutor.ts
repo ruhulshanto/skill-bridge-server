@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { auth } from "../lib/auth";
 import { getHeadersInit } from "../lib/request";
@@ -6,7 +6,7 @@ import { getHeadersInit } from "../lib/request";
 const router: Router = Router();
 
 // GET /api/tutor/profile - Get tutor profile
-router.get("/profile", async (req, res) => {
+router.get("/profile", async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({
       headers: getHeadersInit(req.headers),
@@ -54,7 +54,7 @@ router.get("/profile", async (req, res) => {
 });
 
 // GET /api/tutor/stats - Get tutor dashboard stats
-router.get("/stats", async (req, res) => {
+router.get("/stats", async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({
       headers: getHeadersInit(req.headers),
@@ -110,7 +110,7 @@ router.get("/stats", async (req, res) => {
 });
 
 // GET /api/tutor/bookings - Get tutor bookings/sessions
-router.get("/bookings", async (req, res) => {
+router.get("/bookings", async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({
       headers: getHeadersInit(req.headers),
@@ -181,7 +181,7 @@ router.get("/bookings", async (req, res) => {
 });
 
 // GET /api/tutor/students - Get tutor students
-router.get("/students", async (req, res) => {
+router.get("/students", async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({
       headers: getHeadersInit(req.headers),
@@ -269,7 +269,7 @@ router.get("/students", async (req, res) => {
 });
 
 // GET /api/tutor/availability - Get tutor availability
-router.get("/availability", async (req, res) => {
+router.get("/availability", async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({
       headers: getHeadersInit(req.headers),
@@ -306,7 +306,7 @@ router.get("/availability", async (req, res) => {
 });
 
 // PUT /api/tutor/profile - Update tutor profile (assignment: PUT /api/tutor/profile)
-router.put("/profile", async (req, res) => {
+router.put("/profile", async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({
       headers: getHeadersInit(req.headers),
@@ -426,7 +426,7 @@ router.put("/profile", async (req, res) => {
 });
 
 // PUT /api/tutor/availability - Update availability only (assignment: PUT /api/tutor/availability)
-router.put("/availability", async (req, res) => {
+router.put("/availability", async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({
       headers: getHeadersInit(req.headers),
@@ -485,7 +485,7 @@ router.put("/availability", async (req, res) => {
 });
 
 // GET /api/tutor/stats - Tutor dashboard stats (sessions, earnings, etc.)
-router.get("/stats", async (req, res) => {
+router.get("/stats", async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({
       headers: getHeadersInit(req.headers),
@@ -551,7 +551,7 @@ router.get("/stats", async (req, res) => {
 });
 
 // GET /api/tutor/students - Get all students who have booked sessions with this tutor
-router.get("/students", async (req, res) => {
+router.get("/students", async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({
       headers: getHeadersInit(req.headers),
