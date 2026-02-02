@@ -16,8 +16,13 @@ const app: Application = express();
 // Allow client origin (may be 3000 or 3001 when 3000 is in use)
 const allowedOrigins = (process.env.APP_URL || "http://localhost:3000")
   .split(",")
-  .map((o) => o.trim())
+  .map((o) => o.trim().replace(/\/$/, "")) // Remove trailing slash
   .filter(Boolean);
+
+// Always allow localhost for development
+if (!allowedOrigins.includes("http://localhost:3000")) {
+  allowedOrigins.push("http://localhost:3000");
+}
 if (!allowedOrigins.includes("http://localhost:3001")) {
   allowedOrigins.push("http://localhost:3001");
 }
@@ -28,7 +33,9 @@ if (!allowedOrigins.includes("http://localhost:3002")) {
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      if (!origin) return cb(null, true); // Allow requests with no origin
+      const normalizedOrigin = origin.replace(/\/$/, ""); // Remove trailing slash from origin
+      if (allowedOrigins.includes(normalizedOrigin)) return cb(null, true);
       return cb(null, false);
     },
     credentials: true,
