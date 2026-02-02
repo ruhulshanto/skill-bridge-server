@@ -130,39 +130,69 @@ async function main() {
       },
     });
 
-    // Create Additional Tutors
+    // Create Additional Tutors with unique images
     console.log('👨‍🏫 Creating additional tutors...');
+    const tutorImages = [
+      "https://i.ibb.co.com/6P6fJcQr/tutor-avatar.jpg",
+      "https://i.ibb.co.com/mHqL8X9T/professor-1.jpg",
+      "https://i.ibb.co.com/3kR7N2pM/teacher-2.jpg",
+      "https://i.ibb.co.com/9JwF4tK7/instructor-3.jpg",
+      "https://i.ibb.co.com/Lp8Qr5V1/educator-4.jpg",
+      "https://i.ibb.co.com/T2nY6mK9/mentor-5.jpg"
+    ];
+
+    const tutorNames = [
+      "Dr. Sarah Johnson",
+      "Prof. Michael Chen", 
+      "Ms. Emily Rodriguez",
+      "Mr. David Kim",
+      "Dr. Jessica Williams"
+    ];
+
+    const tutorBios = [
+      "PhD in Computer Science with 10+ years teaching programming and web development",
+      "Mathematics expert specializing in calculus, linear algebra, and discrete mathematics",
+      "Language specialist with expertise in English, Spanish, and French literature",
+      "Science educator focusing on physics, chemistry, and environmental science",
+      "Business and technology consultant with real-world industry experience"
+    ];
+
     for (let i = 1; i <= 5; i++) {
       const tutor = await prisma.user.upsert({
         where: { email: `tutor${i}@test.com` },
-        update: { role: "TUTOR", status: "ACTIVE" },
+        update: { 
+          role: "TUTOR", 
+          status: "ACTIVE",
+          image: tutorImages[i]
+        },
         create: {
-          name: `Tutor ${i}`,
+          name: tutorNames[i - 1],
           email: `tutor${i}@test.com`,
           emailVerified: true,
           role: "TUTOR",
           status: "ACTIVE",
-          phone: `+123456789${i + 2}`
+          phone: `+123456789${i + 2}`,
+          image: tutorImages[i]
         },
       });
 
       const profile = await prisma.tutorProfile.upsert({
         where: { userId: tutor.id },
         update: {
-          bio: `Experienced tutor ${i} with expertise in various subjects.`,
+          bio: tutorBios[i - 1],
           hourlyRate: 3000 + (i * 1000), // $30-$70 in cents
           experience: 2 + i,
-          education: `Master's Degree in Subject ${i}`,
+          education: `Master's Degree in ${subjects[i % 4].name}`,
           rating: 4.0 + (i * 0.2),
           totalReviews: i * 5,
           isVerified: i % 2 === 0
         },
         create: {
           userId: tutor.id,
-          bio: `Experienced tutor ${i} with expertise in various subjects.`,
+          bio: tutorBios[i - 1],
           hourlyRate: 3000 + (i * 1000), // $30-$70 in cents
           experience: 2 + i,
-          education: `Master's Degree in Subject ${i}`,
+          education: `Master's Degree in ${subjects[i % 4].name}`,
           rating: 4.0 + (i * 0.2),
           totalReviews: i * 5,
           isVerified: i % 2 === 0
