@@ -36,17 +36,23 @@ app.use(
       // Allow requests with no origin (mobile apps, etc.)
       if (!origin) return cb(null, true);
       
-      const normalizedOrigin = origin.replace(/\/$/, ""); // Remove trailing slash from origin
+      // Normalize both origins - remove trailing slash and protocol variations
+      const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
       
-      // Check if origin matches any allowed origin (with or without trailing slash)
+      // Check if origin matches any allowed origin (with flexible matching)
       const isAllowed = allowedOrigins.some(allowed => {
-        const normalizedAllowed = allowed.replace(/\/$/, "");
+        const normalizedAllowed = allowed.replace(/\/$/, "").toLowerCase();
         return normalizedAllowed === normalizedOrigin;
       });
       
       if (isAllowed) return cb(null, true);
       
-      // For debugging, log the rejected origin
+      // Special case: allow your exact frontend domain
+      if (normalizedOrigin.includes("skill-bridge-client-ruddy.vercel.app")) {
+        return cb(null, true);
+      }
+      
+      // For debugging
       console.log('CORS rejected origin:', origin, 'Allowed origins:', allowedOrigins);
       return cb(null, false);
     },
