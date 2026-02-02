@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { prisma } from "../lib/prisma";
-import { auth } from "../lib/auth";
-import { getHeadersInit } from "../lib/request";
+import { prisma } from "../lib/prisma.js";
+import { auth } from "../lib/auth.js";
+import { getHeadersInit } from "../lib/request.js";
 
 const router: Router = Router();
 

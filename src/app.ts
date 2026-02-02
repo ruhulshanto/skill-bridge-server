@@ -1,15 +1,15 @@
 import express from "express";
 import type { Application, Request, Response } from "express";
 import { toNodeHandler } from "better-auth/node";
-import { auth } from "./lib/auth";
+import { auth } from "./lib/auth.js";
 import cors from "cors";
-import tutorsRouter from "./routes/tutors";
-import tutorRouter from "./routes/tutor";
-import bookingsRouter from "./routes/bookings";
-import categoriesRouter from "./routes/categories";
-import reviewsRouter from "./routes/reviews";
-import adminRouter from "./routes/admin";
-import studentRouter from "./routes/student";
+import tutorsRouter from "./routes/tutors.js";
+import tutorRouter from "./routes/tutor.js";
+import bookingsRouter from "./routes/bookings.js";
+import categoriesRouter from "./routes/categories.js";
+import reviewsRouter from "./routes/reviews.js";
+import adminRouter from "./routes/admin.js";
+import studentRouter from "./routes/student.js";
 
 const app: Application = express();
 
