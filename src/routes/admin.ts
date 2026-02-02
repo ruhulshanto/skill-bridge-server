@@ -149,16 +149,11 @@ router.get("/bookings", async (req, res) => {
       prisma.booking.findMany({
         where,
         include: {
-          student: {
-            select: { id: true, name: true, email: true },
-          },
+          student: true,
           tutor: {
-            select: { id: true, hourlyRate: true },
             include: {
-              user: {
-                select: { id: true, name: true, email: true },
-              },
-            },
+              user: true
+            }
           },
           review: true,
         },
@@ -276,6 +271,83 @@ router.delete("/categories/:id", async (req, res) => {
   }
 });
 
+// POST /api/admin/register - Register new admin (super admin only)
+router.post("/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        error: { message: "Name, email, and password are required" },
+      });
+    }
+
+    // Check if admin already exists
+    const existingAdmin = await prisma.user.findFirst({
+      where: { role: "ADMIN" }
+    });
+
+    // If no admin exists, allow first admin registration
+    // If admin exists, require existing admin session
+    if (existingAdmin) {
+      const session = await auth.api.getSession({
+        headers: getHeadersInit(req.headers),
+      });
+
+      if (!session?.user || session.user.role !== "ADMIN") {
+        return res.status(403).json({
+          error: { message: "Only existing admins can create new admins" },
+        });
+      }
+    }
+
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        error: { message: "Email already exists" },
+      });
+    }
+
+    // Create admin user using Better Auth
+    const result = await auth.api.signUpEmail({
+      body: {
+        name,
+        email,
+        password,
+        phone: "", // Required field
+        role: "ADMIN"
+      }
+    });
+
+    if (!result.user) {
+      return res.status(400).json({
+        error: { message: "Failed to create admin" }
+      });
+    }
+
+    res.status(201).json({
+      data: {
+        message: "Admin created successfully",
+        admin: {
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error creating admin:", error);
+    res.status(500).json({
+      error: { message: "Failed to create admin" },
+    });
+  }
+});
+
 // GET /api/admin/stats - Dashboard statistics (admin only)
 router.get("/stats", async (req, res) => {
   try {
@@ -308,6 +380,43 @@ router.get("/stats", async (req, res) => {
     console.error("Error fetching admin stats:", error);
     res.status(500).json({
       error: { message: "Failed to fetch stats" },
+    });
+  }
+});
+
+// PUT /api/admin/profile - Update admin profile
+router.put("/profile", async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers),
+    });
+
+    if (!session?.user) {
+      return res.status(401).json({
+        error: { message: "Unauthorized" },
+      });
+    }
+
+    const { name, phone } = req.body; // Remove bio since it doesn't exist in database
+
+    const updatedUser = await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        ...(name && { name }),
+        ...(phone !== undefined && { phone }),
+        // bio field removed - not in database schema
+      },
+    });
+
+    res.json({
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating admin profile:", error);
+    res.status(500).json({
+      error: { message: "Failed to update profile" },
     });
   }
 });

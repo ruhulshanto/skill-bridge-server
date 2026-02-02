@@ -20,6 +20,9 @@ const allowedOrigins = (process.env.APP_URL || "http://localhost:3000")
 if (!allowedOrigins.includes("http://localhost:3001")) {
   allowedOrigins.push("http://localhost:3001");
 }
+if (!allowedOrigins.includes("http://localhost:3002")) {
+  allowedOrigins.push("http://localhost:3002");
+}
 
 app.use(
   cors({

@@ -155,7 +155,9 @@ exports.Prisma.AccountScalarFieldEnum = {
   accountId: 'accountId',
   password: 'password',
   providerId: 'providerId',
-  expiresAt: 'expiresAt'
+  expiresAt: 'expiresAt',
+  accessTokenExpiresAt: 'accessTokenExpiresAt',
+  scope: 'scope'
 };
 
 exports.Prisma.VerificationScalarFieldEnum = {

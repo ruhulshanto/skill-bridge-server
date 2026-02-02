@@ -90,11 +90,17 @@ router.get("/", async (req, res) => {
         },
         skip,
         take: limitNum,
-        orderBy: {
-          tutorProfile: {
-            rating: "desc",
+        orderBy: [
+          // Order by tutors with profiles first (by rating), then by name
+          {
+            tutorProfile: {
+              rating: 'desc',
+            },
           },
-        },
+          {
+            name: 'asc',
+          },
+        ],
       }),
       prisma.user.count({ where }),
     ]);
@@ -127,9 +133,7 @@ router.get("/:id", async (req, res) => {
       where: {
         id,
         role: "TUTOR",
-        tutorProfile: {
-          isVerified: true,
-        },
+        // Removed isVerified requirement - all tutors should be visible
       },
       include: {
         tutorProfile: {

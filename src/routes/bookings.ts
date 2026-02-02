@@ -49,7 +49,9 @@ router.post("/", async (req, res) => {
     }
 
     // Check for booking conflicts (tutorId in Booking is TutorProfile.id)
-    const bookingDate = new Date(date);
+    // Parse the date as local date to avoid timezone issues
+    const [year, month, day] = date.split('-').map(Number);
+    const bookingDate = new Date(year, month - 1, day); // month is 0-indexed in JS
 
     const existingBooking = await prisma.booking.findFirst({
       where: {
@@ -303,7 +305,7 @@ router.patch("/:id", async (req, res) => {
     }
 
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, date, startTime, endTime } = req.body;
 
     const booking = await prisma.booking.findFirst({
       where: {
@@ -337,13 +339,77 @@ router.patch("/:id", async (req, res) => {
     }
 
     // Update booking
+    const updateData: any = { status };
+    
+    // Handle rescheduling if date/time is provided
+    if (date || startTime || endTime) {
+      // Only students can reschedule their own bookings
+      if (session.user.role !== "STUDENT" || booking.studentId !== session.user.id) {
+        return res.status(403).json({
+          error: { message: "Only students can reschedule their own bookings" },
+        });
+      }
+      
+      // Check if booking can be rescheduled (only confirmed bookings)
+      if (booking.status !== "CONFIRMED") {
+        return res.status(400).json({
+          error: { message: "Only confirmed bookings can be rescheduled" },
+        });
+      }
+      
+      // Prepare new date/time
+      let newDate = booking.date;
+      if (date) {
+        // Parse date as local date to avoid timezone issues
+        const [year, month, day] = date.split('-').map(Number);
+        newDate = new Date(year, month - 1, day);
+      }
+      
+      const newStartTime = startTime || booking.startTime;
+      const newEndTime = endTime || booking.endTime;
+      
+      // Check for conflicts with new time slot
+      const conflictBooking = await prisma.booking.findFirst({
+        where: {
+          tutorId: booking.tutorId,
+          date: newDate,
+          status: {
+            in: ["CONFIRMED", "COMPLETED"],
+          },
+          id: { not: id }, // Exclude current booking
+          OR: [
+            {
+              AND: [
+                { startTime: { lte: newStartTime } },
+                { endTime: { gt: newStartTime } },
+              ],
+            },
+            {
+              AND: [
+                { startTime: { lt: newEndTime } },
+                { endTime: { gte: newEndTime } },
+              ],
+            },
+          ],
+        },
+      });
+      
+      if (conflictBooking) {
+        return res.status(409).json({
+          error: { message: "Time slot already booked" },
+        });
+      }
+      
+      updateData.date = newDate;
+      updateData.startTime = newStartTime;
+      updateData.endTime = newEndTime;
+    }
+
     const updatedBooking = await prisma.booking.update({
       where: {
         id,
       },
-      data: {
-        status,
-      },
+      data: updateData,
       include: {
         student: {
           select: {

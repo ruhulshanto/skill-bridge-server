@@ -4210,6 +4210,8 @@ export namespace Prisma {
     password: string | null
     providerId: string | null
     expiresAt: Date | null
+    accessTokenExpiresAt: Date | null
+    scope: string | null
   }
 
   export type AccountMaxAggregateOutputType = {
@@ -4224,6 +4226,8 @@ export namespace Prisma {
     password: string | null
     providerId: string | null
     expiresAt: Date | null
+    accessTokenExpiresAt: Date | null
+    scope: string | null
   }
 
   export type AccountCountAggregateOutputType = {
@@ -4238,6 +4242,8 @@ export namespace Prisma {
     password: number
     providerId: number
     expiresAt: number
+    accessTokenExpiresAt: number
+    scope: number
     _all: number
   }
 
@@ -4254,6 +4260,8 @@ export namespace Prisma {
     password?: true
     providerId?: true
     expiresAt?: true
+    accessTokenExpiresAt?: true
+    scope?: true
   }
 
   export type AccountMaxAggregateInputType = {
@@ -4268,6 +4276,8 @@ export namespace Prisma {
     password?: true
     providerId?: true
     expiresAt?: true
+    accessTokenExpiresAt?: true
+    scope?: true
   }
 
   export type AccountCountAggregateInputType = {
@@ -4282,6 +4292,8 @@ export namespace Prisma {
     password?: true
     providerId?: true
     expiresAt?: true
+    accessTokenExpiresAt?: true
+    scope?: true
     _all?: true
   }
 
@@ -4369,6 +4381,8 @@ export namespace Prisma {
     password: string | null
     providerId: string
     expiresAt: Date | null
+    accessTokenExpiresAt: Date | null
+    scope: string | null
     _count: AccountCountAggregateOutputType | null
     _min: AccountMinAggregateOutputType | null
     _max: AccountMaxAggregateOutputType | null
@@ -4400,6 +4414,8 @@ export namespace Prisma {
     password?: boolean
     providerId?: boolean
     expiresAt?: boolean
+    accessTokenExpiresAt?: boolean
+    scope?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["account"]>
 
@@ -4415,6 +4431,8 @@ export namespace Prisma {
     password?: boolean
     providerId?: boolean
     expiresAt?: boolean
+    accessTokenExpiresAt?: boolean
+    scope?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["account"]>
 
@@ -4430,6 +4448,8 @@ export namespace Prisma {
     password?: boolean
     providerId?: boolean
     expiresAt?: boolean
+    accessTokenExpiresAt?: boolean
+    scope?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["account"]>
 
@@ -4445,9 +4465,11 @@ export namespace Prisma {
     password?: boolean
     providerId?: boolean
     expiresAt?: boolean
+    accessTokenExpiresAt?: boolean
+    scope?: boolean
   }
 
-  export type AccountOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "createdAt" | "updatedAt" | "accessToken" | "idToken" | "refreshToken" | "accountId" | "password" | "providerId" | "expiresAt", ExtArgs["result"]["account"]>
+  export type AccountOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "createdAt" | "updatedAt" | "accessToken" | "idToken" | "refreshToken" | "accountId" | "password" | "providerId" | "expiresAt" | "accessTokenExpiresAt" | "scope", ExtArgs["result"]["account"]>
   export type AccountInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -4475,6 +4497,8 @@ export namespace Prisma {
       password: string | null
       providerId: string
       expiresAt: Date | null
+      accessTokenExpiresAt: Date | null
+      scope: string | null
     }, ExtArgs["result"]["account"]>
     composites: {}
   }
@@ -4910,6 +4934,8 @@ export namespace Prisma {
     readonly password: FieldRef<"Account", 'String'>
     readonly providerId: FieldRef<"Account", 'String'>
     readonly expiresAt: FieldRef<"Account", 'DateTime'>
+    readonly accessTokenExpiresAt: FieldRef<"Account", 'DateTime'>
+    readonly scope: FieldRef<"Account", 'String'>
   }
     
 
@@ -13236,7 +13262,9 @@ export namespace Prisma {
     accountId: 'accountId',
     password: 'password',
     providerId: 'providerId',
-    expiresAt: 'expiresAt'
+    expiresAt: 'expiresAt',
+    accessTokenExpiresAt: 'accessTokenExpiresAt',
+    scope: 'scope'
   };
 
   export type AccountScalarFieldEnum = (typeof AccountScalarFieldEnum)[keyof typeof AccountScalarFieldEnum]
@@ -13622,6 +13650,8 @@ export namespace Prisma {
     password?: StringNullableFilter<"Account"> | string | null
     providerId?: StringFilter<"Account"> | string
     expiresAt?: DateTimeNullableFilter<"Account"> | Date | string | null
+    accessTokenExpiresAt?: DateTimeNullableFilter<"Account"> | Date | string | null
+    scope?: StringNullableFilter<"Account"> | string | null
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
   }
 
@@ -13637,6 +13667,8 @@ export namespace Prisma {
     password?: SortOrderInput | SortOrder
     providerId?: SortOrder
     expiresAt?: SortOrderInput | SortOrder
+    accessTokenExpiresAt?: SortOrderInput | SortOrder
+    scope?: SortOrderInput | SortOrder
     user?: UserOrderByWithRelationInput
   }
 
@@ -13656,6 +13688,8 @@ export namespace Prisma {
     password?: StringNullableFilter<"Account"> | string | null
     providerId?: StringFilter<"Account"> | string
     expiresAt?: DateTimeNullableFilter<"Account"> | Date | string | null
+    accessTokenExpiresAt?: DateTimeNullableFilter<"Account"> | Date | string | null
+    scope?: StringNullableFilter<"Account"> | string | null
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
   }, "id" | "providerId_accountId">
 
@@ -13671,6 +13705,8 @@ export namespace Prisma {
     password?: SortOrderInput | SortOrder
     providerId?: SortOrder
     expiresAt?: SortOrderInput | SortOrder
+    accessTokenExpiresAt?: SortOrderInput | SortOrder
+    scope?: SortOrderInput | SortOrder
     _count?: AccountCountOrderByAggregateInput
     _max?: AccountMaxOrderByAggregateInput
     _min?: AccountMinOrderByAggregateInput
@@ -13691,6 +13727,8 @@ export namespace Prisma {
     password?: StringNullableWithAggregatesFilter<"Account"> | string | null
     providerId?: StringWithAggregatesFilter<"Account"> | string
     expiresAt?: DateTimeNullableWithAggregatesFilter<"Account"> | Date | string | null
+    accessTokenExpiresAt?: DateTimeNullableWithAggregatesFilter<"Account"> | Date | string | null
+    scope?: StringNullableWithAggregatesFilter<"Account"> | string | null
   }
 
   export type VerificationWhereInput = {
@@ -14389,6 +14427,8 @@ export namespace Prisma {
     password?: string | null
     providerId: string
     expiresAt?: Date | string | null
+    accessTokenExpiresAt?: Date | string | null
+    scope?: string | null
     user: UserCreateNestedOneWithoutAccountsInput
   }
 
@@ -14404,6 +14444,8 @@ export namespace Prisma {
     password?: string | null
     providerId: string
     expiresAt?: Date | string | null
+    accessTokenExpiresAt?: Date | string | null
+    scope?: string | null
   }
 
   export type AccountUpdateInput = {
@@ -14417,6 +14459,8 @@ export namespace Prisma {
     password?: NullableStringFieldUpdateOperationsInput | string | null
     providerId?: StringFieldUpdateOperationsInput | string
     expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    accessTokenExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    scope?: NullableStringFieldUpdateOperationsInput | string | null
     user?: UserUpdateOneRequiredWithoutAccountsNestedInput
   }
 
@@ -14432,6 +14476,8 @@ export namespace Prisma {
     password?: NullableStringFieldUpdateOperationsInput | string | null
     providerId?: StringFieldUpdateOperationsInput | string
     expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    accessTokenExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    scope?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type AccountCreateManyInput = {
@@ -14446,6 +14492,8 @@ export namespace Prisma {
     password?: string | null
     providerId: string
     expiresAt?: Date | string | null
+    accessTokenExpiresAt?: Date | string | null
+    scope?: string | null
   }
 
   export type AccountUpdateManyMutationInput = {
@@ -14459,6 +14507,8 @@ export namespace Prisma {
     password?: NullableStringFieldUpdateOperationsInput | string | null
     providerId?: StringFieldUpdateOperationsInput | string
     expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    accessTokenExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    scope?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type AccountUncheckedUpdateManyInput = {
@@ -14473,6 +14523,8 @@ export namespace Prisma {
     password?: NullableStringFieldUpdateOperationsInput | string | null
     providerId?: StringFieldUpdateOperationsInput | string
     expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    accessTokenExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    scope?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type VerificationCreateInput = {
@@ -15257,6 +15309,8 @@ export namespace Prisma {
     password?: SortOrder
     providerId?: SortOrder
     expiresAt?: SortOrder
+    accessTokenExpiresAt?: SortOrder
+    scope?: SortOrder
   }
 
   export type AccountMaxOrderByAggregateInput = {
@@ -15271,6 +15325,8 @@ export namespace Prisma {
     password?: SortOrder
     providerId?: SortOrder
     expiresAt?: SortOrder
+    accessTokenExpiresAt?: SortOrder
+    scope?: SortOrder
   }
 
   export type AccountMinOrderByAggregateInput = {
@@ -15285,6 +15341,8 @@ export namespace Prisma {
     password?: SortOrder
     providerId?: SortOrder
     expiresAt?: SortOrder
+    accessTokenExpiresAt?: SortOrder
+    scope?: SortOrder
   }
 
   export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -16477,6 +16535,8 @@ export namespace Prisma {
     password?: string | null
     providerId: string
     expiresAt?: Date | string | null
+    accessTokenExpiresAt?: Date | string | null
+    scope?: string | null
   }
 
   export type AccountUncheckedCreateWithoutUserInput = {
@@ -16490,6 +16550,8 @@ export namespace Prisma {
     password?: string | null
     providerId: string
     expiresAt?: Date | string | null
+    accessTokenExpiresAt?: Date | string | null
+    scope?: string | null
   }
 
   export type AccountCreateOrConnectWithoutUserInput = {
@@ -16668,6 +16730,8 @@ export namespace Prisma {
     password?: StringNullableFilter<"Account"> | string | null
     providerId?: StringFilter<"Account"> | string
     expiresAt?: DateTimeNullableFilter<"Account"> | Date | string | null
+    accessTokenExpiresAt?: DateTimeNullableFilter<"Account"> | Date | string | null
+    scope?: StringNullableFilter<"Account"> | string | null
   }
 
   export type BookingUpsertWithWhereUniqueWithoutStudentInput = {
@@ -17850,6 +17914,8 @@ export namespace Prisma {
     password?: string | null
     providerId: string
     expiresAt?: Date | string | null
+    accessTokenExpiresAt?: Date | string | null
+    scope?: string | null
   }
 
   export type BookingCreateManyStudentInput = {
@@ -17896,6 +17962,8 @@ export namespace Prisma {
     password?: NullableStringFieldUpdateOperationsInput | string | null
     providerId?: StringFieldUpdateOperationsInput | string
     expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    accessTokenExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    scope?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type AccountUncheckedUpdateWithoutUserInput = {
@@ -17909,6 +17977,8 @@ export namespace Prisma {
     password?: NullableStringFieldUpdateOperationsInput | string | null
     providerId?: StringFieldUpdateOperationsInput | string
     expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    accessTokenExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    scope?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type AccountUncheckedUpdateManyWithoutUserInput = {
@@ -17922,6 +17992,8 @@ export namespace Prisma {
     password?: NullableStringFieldUpdateOperationsInput | string | null
     providerId?: StringFieldUpdateOperationsInput | string
     expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    accessTokenExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    scope?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type BookingUpdateWithoutStudentInput = {

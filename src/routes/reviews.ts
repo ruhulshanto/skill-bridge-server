@@ -98,4 +98,53 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET /api/reviews/tutor/:tutorId - Get reviews for a specific tutor
+router.get("/tutor/:tutorId", async (req, res) => {
+  try {
+    const { tutorId } = req.params;
+
+    const reviews = await prisma.review.findMany({
+      where: {
+        booking: {
+          tutorId: tutorId
+        }
+      },
+      include: {
+        student: {
+          select: {
+            name: true,
+            image: true
+          }
+        },
+        booking: {
+          select: {
+            date: true,
+            createdAt: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json({
+      data: reviews.map(review => ({
+        id: review.id,
+        user: review.student.name,
+        userImage: review.student.image,
+        rating: review.rating,
+        comment: review.comment,
+        date: review.booking.date,
+        createdAt: review.createdAt
+      }))
+    });
+  } catch (error) {
+    console.error("Error fetching tutor reviews:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch reviews" },
+    });
+  }
+});
+
 export default router;
