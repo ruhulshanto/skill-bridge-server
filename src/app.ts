@@ -14,10 +14,13 @@ import studentRouter from "./routes/student.js";
 const app: Application = express();
 
 // Allow client origin (may be 3000 or 3001 when 3000 is in use)
+console.log('=== CORS DEBUG ===');
+console.log('Raw APP_URL:', process.env.APP_URL);
 const allowedOrigins = (process.env.APP_URL || "http://localhost:3000")
   .split(",")
   .map((o) => o.trim().replace(/\/$/, "")) // Remove trailing slash
   .filter(Boolean);
+console.log('Processed allowedOrigins:', allowedOrigins);
 
 // Always allow localhost for development
 if (!allowedOrigins.includes("http://localhost:3000")) {
@@ -29,6 +32,8 @@ if (!allowedOrigins.includes("http://localhost:3001")) {
 if (!allowedOrigins.includes("http://localhost:3002")) {
   allowedOrigins.push("http://localhost:3002");
 }
+console.log('Final allowedOrigins:', allowedOrigins);
+console.log('=== END CORS DEBUG ===');
 
 app.use(
   cors({
