@@ -1,21 +1,15 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "api/index.ts",
-            "use": "@vercel/node",
-            "config": {
-                "includeFiles": [
-                    "src/**",
-                    "prisma/**"
-                ]
-            }
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "api/index.ts"
-        }
-    ]
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.mjs",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.mjs"
+    }
+  ]
 }
