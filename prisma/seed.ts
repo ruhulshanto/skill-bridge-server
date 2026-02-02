@@ -63,7 +63,7 @@ async function main() {
       update: { 
         role: "TUTOR", 
         status: "ACTIVE",
-        image: "https://i.ibb.co.com/6P6fJcQr/tutor-avatar.jpg"
+        image: "https://picsum.photos/seed/maintutor/200/200.jpg"
       },
       create: {
         name: "Test Tutor",
@@ -72,7 +72,7 @@ async function main() {
         role: "TUTOR",
         status: "ACTIVE",
         phone: "+1234567891",
-        image: "https://i.ibb.co.com/6P6fJcQr/tutor-avatar.jpg"
+        image: "https://picsum.photos/seed/maintutor/200/200.jpg"
       },
     });
 
@@ -117,7 +117,7 @@ async function main() {
       update: { 
         role: "STUDENT", 
         status: "ACTIVE",
-        image: "https://i.ibb.co.com/8gX7mY2f/student-avatar.jpg"
+        image: "https://picsum.photos/seed/student/200/200.jpg"
       },
       create: {
         name: "Test Student",
@@ -126,19 +126,19 @@ async function main() {
         role: "STUDENT",
         status: "ACTIVE",
         phone: "+1234567892",
-        image: "https://i.ibb.co.com/8gX7mY2f/student-avatar.jpg"
+        image: "https://picsum.photos/seed/student/200/200.jpg"
       },
     });
 
     // Create Additional Tutors with unique images
     console.log('👨‍🏫 Creating additional tutors...');
     const tutorImages = [
-      "https://i.ibb.co.com/6P6fJcQr/tutor-avatar.jpg",
-      "https://i.ibb.co.com/mHqL8X9T/professor-1.jpg",
-      "https://i.ibb.co.com/3kR7N2pM/teacher-2.jpg",
-      "https://i.ibb.co.com/9JwF4tK7/instructor-3.jpg",
-      "https://i.ibb.co.com/Lp8Qr5V1/educator-4.jpg",
-      "https://i.ibb.co.com/T2nY6mK9/mentor-5.jpg"
+      "https://picsum.photos/seed/tutor1/200/200.jpg",
+      "https://picsum.photos/seed/tutor2/200/200.jpg",
+      "https://picsum.photos/seed/tutor3/200/200.jpg",
+      "https://picsum.photos/seed/tutor4/200/200.jpg",
+      "https://picsum.photos/seed/tutor5/200/200.jpg",
+      "https://picsum.photos/seed/tutor6/200/200.jpg"
     ];
 
     const tutorNames = [
