@@ -51,7 +51,7 @@ router.post("/", async (req, res) => {
     // Check for booking conflicts (tutorId in Booking is TutorProfile.id)
     // Parse the date as local date to avoid timezone issues
     const [year, month, day] = date.split('-').map(Number);
-    const bookingDate = new Date(year, month - 1, day); // month is 0-indexed in JS
+    const bookingDate = new Date(year!, month! - 1, day!); // month is 0-indexed in JS
 
     const existingBooking = await prisma.booking.findFirst({
       where: {

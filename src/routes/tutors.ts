@@ -131,7 +131,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
     const tutor = await prisma.user.findFirst({
       where: {
-        id,
+        id: id as string,
         role: "TUTOR",
         // Removed isVerified requirement - all tutors should be visible
       },
@@ -159,7 +159,7 @@ router.get("/:id", async (req: Request, res: Response) => {
     const reviews = await prisma.review.findMany({
       where: {
         booking: {
-          tutorId: id,
+          tutorId: id as string,
         },
       },
       include: {
