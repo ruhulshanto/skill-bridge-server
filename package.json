@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "prisma generate",
+    "build": "npx prisma generate",
     "dev": "pnpm exec tsx watch src/server.ts",
     "db:seed": "npx prisma db seed"
   },
@@ -18,11 +18,10 @@
   "packageManager": "pnpm@10.20.0",
   "devDependencies": {
     "@types/cors": "^2.8.19",
-    "@types/express": "^4.17.25",
+    "@types/express": "^4.17.21",
     "@types/node": "^25.0.3",
     "@types/nodemailer": "^7.0.4",
     "@types/pg": "^8.16.0",
-    "@types/bcryptjs": "^2.4.6",
     "prisma": "^7.2.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
@@ -35,7 +34,7 @@
     "better-auth": "^1.4.9",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^4.22.1",
+    "express": "^4.19.2",
     "nodemailer": "^7.0.12",
     "pg": "^8.16.3",
     "zod": "^3.25.76"
