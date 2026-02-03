@@ -319,6 +319,8 @@ router.post("/register", async (req, res) => {
         email,
         password,
         phone: "", // Required field
+        bio: "",   // Required field
+        location: "", // Required field
         role: "ADMIN"
       }
     });
@@ -380,6 +382,53 @@ router.get("/stats", async (req, res) => {
     console.error("Error fetching admin stats:", error);
     res.status(500).json({
       error: { message: "Failed to fetch stats" },
+    });
+  }
+});
+
+// GET /api/admin/profile - Get current admin profile
+router.get("/profile", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers),
+    });
+
+    if (!session?.user || session.user.role !== "ADMIN") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" },
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        bio: true,
+        location: true,
+        role: true,
+        status: true,
+        image: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: { message: "Admin not found" },
+      });
+    }
+
+    res.json({
+      data: user,
+    });
+  } catch (error) {
+    console.error("Error fetching admin profile:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch profile" },
     });
   }
 });

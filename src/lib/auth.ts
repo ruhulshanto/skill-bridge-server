@@ -27,6 +27,12 @@ export const auth = betterAuth({
       phone: {
         type: "string",
       },
+      bio: {
+        type: "string",
+      },
+      location: {
+        type: "string",
+      },
       status: {
         type: "string",
         defaultValue: "ACTIVE",
