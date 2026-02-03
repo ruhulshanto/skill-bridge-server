@@ -1,503 +1,22 @@
-var __defProp = Object.defineProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-
 // src/app.ts
-import express3 from "express";
-
-// src/modules/post/post.router.ts
 import express from "express";
-
-// generated/prisma/client.ts
-import * as path from "path";
-import { fileURLToPath } from "url";
-
-// generated/prisma/internal/class.ts
-import * as runtime from "@prisma/client/runtime/client";
-var config = {
-  "previewFeatures": [],
-  "clientVersion": "7.3.0",
-  "engineVersion": "9d6ad21cbbceab97458517b147a6a09ff43aa735",
-  "activeProvider": "postgresql",
-  "inlineSchema": 'model User {\n  id            String    @id\n  name          String\n  email         String\n  emailVerified Boolean   @default(false)\n  image         String?\n  createdAt     DateTime  @default(now())\n  updatedAt     DateTime  @updatedAt\n  sessions      Session[]\n  accounts      Account[]\n\n  role   String? @default("USER")\n  phone  String?\n  status String? @default("ACTIVE")\n\n  @@unique([email])\n  @@map("user")\n}\n\nmodel Session {\n  id        String   @id\n  expiresAt DateTime\n  token     String\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  ipAddress String?\n  userAgent String?\n  userId    String\n  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([token])\n  @@index([userId])\n  @@map("session")\n}\n\nmodel Account {\n  id                    String    @id\n  accountId             String\n  providerId            String\n  userId                String\n  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)\n  accessToken           String?\n  refreshToken          String?\n  idToken               String?\n  accessTokenExpiresAt  DateTime?\n  refreshTokenExpiresAt DateTime?\n  scope                 String?\n  password              String?\n  createdAt             DateTime  @default(now())\n  updatedAt             DateTime  @updatedAt\n\n  @@index([userId])\n  @@map("account")\n}\n\nmodel Verification {\n  id         String   @id\n  identifier String\n  value      String\n  expiresAt  DateTime\n  createdAt  DateTime @default(now())\n  updatedAt  DateTime @updatedAt\n\n  @@index([identifier])\n  @@map("verification")\n}\n\nmodel Comment {\n  id       String    @id @default(uuid())\n  content  String    @db.Text\n  authorId String // better auth\n  postId   String\n  post     Post      @relation(fields: [postId], references: [id], onDelete: Cascade)\n  parentId String?\n  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)\n  replies  Comment[] @relation("CommentReplies")\n\n  status    CommentStatus @default(APPROVED)\n  createdAt DateTime      @default(now())\n  updatedAt DateTime      @updatedAt\n\n  @@index([postId])\n  @@index([authorId])\n  @@map("comments")\n}\n\nenum CommentStatus {\n  APPROVED\n  REJECT\n}\n\nmodel Post {\n  id         String     @id @default(uuid())\n  title      String     @db.VarChar(225)\n  content    String     @db.Text\n  thumbnail  String?\n  isFeatured Boolean    @default(false)\n  status     PostStatus @default(PUBLISHED)\n  tags       String[]\n  views      Int        @default(0)\n  authorId   String // better auth\n  createdAt  DateTime   @default(now())\n  updatedAt  DateTime   @updatedAt\n  comments   Comment[]\n\n  @@index([authorId])\n  @@map("posts")\n}\n\nenum PostStatus {\n  DRAFT\n  PUBLISHED\n  ARCHIVED\n}\n\n// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = "prisma-client"\n  output   = "../../generated/prisma"\n}\n\ndatasource db {\n  provider = "postgresql"\n}\n',
-  "runtimeDataModel": {
-    "models": {},
-    "enums": {},
-    "types": {}
-  }
-};
-config.runtimeDataModel = JSON.parse('{"models":{"User":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"name","kind":"scalar","type":"String"},{"name":"email","kind":"scalar","type":"String"},{"name":"emailVerified","kind":"scalar","type":"Boolean"},{"name":"image","kind":"scalar","type":"String"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"sessions","kind":"object","type":"Session","relationName":"SessionToUser"},{"name":"accounts","kind":"object","type":"Account","relationName":"AccountToUser"},{"name":"role","kind":"scalar","type":"String"},{"name":"phone","kind":"scalar","type":"String"},{"name":"status","kind":"scalar","type":"String"}],"dbName":"user"},"Session":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"expiresAt","kind":"scalar","type":"DateTime"},{"name":"token","kind":"scalar","type":"String"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"ipAddress","kind":"scalar","type":"String"},{"name":"userAgent","kind":"scalar","type":"String"},{"name":"userId","kind":"scalar","type":"String"},{"name":"user","kind":"object","type":"User","relationName":"SessionToUser"}],"dbName":"session"},"Account":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"accountId","kind":"scalar","type":"String"},{"name":"providerId","kind":"scalar","type":"String"},{"name":"userId","kind":"scalar","type":"String"},{"name":"user","kind":"object","type":"User","relationName":"AccountToUser"},{"name":"accessToken","kind":"scalar","type":"String"},{"name":"refreshToken","kind":"scalar","type":"String"},{"name":"idToken","kind":"scalar","type":"String"},{"name":"accessTokenExpiresAt","kind":"scalar","type":"DateTime"},{"name":"refreshTokenExpiresAt","kind":"scalar","type":"DateTime"},{"name":"scope","kind":"scalar","type":"String"},{"name":"password","kind":"scalar","type":"String"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":"account"},"Verification":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"identifier","kind":"scalar","type":"String"},{"name":"value","kind":"scalar","type":"String"},{"name":"expiresAt","kind":"scalar","type":"DateTime"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":"verification"},"Comment":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"content","kind":"scalar","type":"String"},{"name":"authorId","kind":"scalar","type":"String"},{"name":"postId","kind":"scalar","type":"String"},{"name":"post","kind":"object","type":"Post","relationName":"CommentToPost"},{"name":"parentId","kind":"scalar","type":"String"},{"name":"parent","kind":"object","type":"Comment","relationName":"CommentReplies"},{"name":"replies","kind":"object","type":"Comment","relationName":"CommentReplies"},{"name":"status","kind":"enum","type":"CommentStatus"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":"comments"},"Post":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"title","kind":"scalar","type":"String"},{"name":"content","kind":"scalar","type":"String"},{"name":"thumbnail","kind":"scalar","type":"String"},{"name":"isFeatured","kind":"scalar","type":"Boolean"},{"name":"status","kind":"enum","type":"PostStatus"},{"name":"tags","kind":"scalar","type":"String"},{"name":"views","kind":"scalar","type":"Int"},{"name":"authorId","kind":"scalar","type":"String"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"comments","kind":"object","type":"Comment","relationName":"CommentToPost"}],"dbName":"posts"}},"enums":{},"types":{}}');
-async function decodeBase64AsWasm(wasmBase64) {
-  const { Buffer: Buffer2 } = await import("buffer");
-  const wasmArray = Buffer2.from(wasmBase64, "base64");
-  return new WebAssembly.Module(wasmArray);
-}
-config.compilerWasm = {
-  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.mjs"),
-  getQueryCompilerWasmModule: async () => {
-    const { wasm } = await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.wasm-base64.mjs");
-    return await decodeBase64AsWasm(wasm);
-  },
-  importName: "./query_compiler_fast_bg.js"
-};
-function getPrismaClientClass() {
-  return runtime.getPrismaClient(config);
-}
-
-// generated/prisma/internal/prismaNamespace.ts
-var prismaNamespace_exports = {};
-__export(prismaNamespace_exports, {
-  AccountScalarFieldEnum: () => AccountScalarFieldEnum,
-  AnyNull: () => AnyNull2,
-  CommentScalarFieldEnum: () => CommentScalarFieldEnum,
-  DbNull: () => DbNull2,
-  Decimal: () => Decimal2,
-  JsonNull: () => JsonNull2,
-  ModelName: () => ModelName,
-  NullTypes: () => NullTypes2,
-  NullsOrder: () => NullsOrder,
-  PostScalarFieldEnum: () => PostScalarFieldEnum,
-  PrismaClientInitializationError: () => PrismaClientInitializationError2,
-  PrismaClientKnownRequestError: () => PrismaClientKnownRequestError2,
-  PrismaClientRustPanicError: () => PrismaClientRustPanicError2,
-  PrismaClientUnknownRequestError: () => PrismaClientUnknownRequestError2,
-  PrismaClientValidationError: () => PrismaClientValidationError2,
-  QueryMode: () => QueryMode,
-  SessionScalarFieldEnum: () => SessionScalarFieldEnum,
-  SortOrder: () => SortOrder,
-  Sql: () => Sql2,
-  TransactionIsolationLevel: () => TransactionIsolationLevel,
-  UserScalarFieldEnum: () => UserScalarFieldEnum,
-  VerificationScalarFieldEnum: () => VerificationScalarFieldEnum,
-  defineExtension: () => defineExtension,
-  empty: () => empty2,
-  getExtensionContext: () => getExtensionContext,
-  join: () => join2,
-  prismaVersion: () => prismaVersion,
-  raw: () => raw2,
-  sql: () => sql
-});
-import * as runtime2 from "@prisma/client/runtime/client";
-var PrismaClientKnownRequestError2 = runtime2.PrismaClientKnownRequestError;
-var PrismaClientUnknownRequestError2 = runtime2.PrismaClientUnknownRequestError;
-var PrismaClientRustPanicError2 = runtime2.PrismaClientRustPanicError;
-var PrismaClientInitializationError2 = runtime2.PrismaClientInitializationError;
-var PrismaClientValidationError2 = runtime2.PrismaClientValidationError;
-var sql = runtime2.sqltag;
-var empty2 = runtime2.empty;
-var join2 = runtime2.join;
-var raw2 = runtime2.raw;
-var Sql2 = runtime2.Sql;
-var Decimal2 = runtime2.Decimal;
-var getExtensionContext = runtime2.Extensions.getExtensionContext;
-var prismaVersion = {
-  client: "7.3.0",
-  engine: "9d6ad21cbbceab97458517b147a6a09ff43aa735"
-};
-var NullTypes2 = {
-  DbNull: runtime2.NullTypes.DbNull,
-  JsonNull: runtime2.NullTypes.JsonNull,
-  AnyNull: runtime2.NullTypes.AnyNull
-};
-var DbNull2 = runtime2.DbNull;
-var JsonNull2 = runtime2.JsonNull;
-var AnyNull2 = runtime2.AnyNull;
-var ModelName = {
-  User: "User",
-  Session: "Session",
-  Account: "Account",
-  Verification: "Verification",
-  Comment: "Comment",
-  Post: "Post"
-};
-var TransactionIsolationLevel = runtime2.makeStrictEnum({
-  ReadUncommitted: "ReadUncommitted",
-  ReadCommitted: "ReadCommitted",
-  RepeatableRead: "RepeatableRead",
-  Serializable: "Serializable"
-});
-var UserScalarFieldEnum = {
-  id: "id",
-  name: "name",
-  email: "email",
-  emailVerified: "emailVerified",
-  image: "image",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-  role: "role",
-  phone: "phone",
-  status: "status"
-};
-var SessionScalarFieldEnum = {
-  id: "id",
-  expiresAt: "expiresAt",
-  token: "token",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-  ipAddress: "ipAddress",
-  userAgent: "userAgent",
-  userId: "userId"
-};
-var AccountScalarFieldEnum = {
-  id: "id",
-  accountId: "accountId",
-  providerId: "providerId",
-  userId: "userId",
-  accessToken: "accessToken",
-  refreshToken: "refreshToken",
-  idToken: "idToken",
-  accessTokenExpiresAt: "accessTokenExpiresAt",
-  refreshTokenExpiresAt: "refreshTokenExpiresAt",
-  scope: "scope",
-  password: "password",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt"
-};
-var VerificationScalarFieldEnum = {
-  id: "id",
-  identifier: "identifier",
-  value: "value",
-  expiresAt: "expiresAt",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt"
-};
-var CommentScalarFieldEnum = {
-  id: "id",
-  content: "content",
-  authorId: "authorId",
-  postId: "postId",
-  parentId: "parentId",
-  status: "status",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt"
-};
-var PostScalarFieldEnum = {
-  id: "id",
-  title: "title",
-  content: "content",
-  thumbnail: "thumbnail",
-  isFeatured: "isFeatured",
-  status: "status",
-  tags: "tags",
-  views: "views",
-  authorId: "authorId",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt"
-};
-var SortOrder = {
-  asc: "asc",
-  desc: "desc"
-};
-var QueryMode = {
-  default: "default",
-  insensitive: "insensitive"
-};
-var NullsOrder = {
-  first: "first",
-  last: "last"
-};
-var defineExtension = runtime2.Extensions.defineExtension;
-
-// generated/prisma/enums.ts
-var CommentStatus = {
-  APPROVED: "APPROVED",
-  REJECT: "REJECT"
-};
-var PostStatus = {
-  DRAFT: "DRAFT",
-  PUBLISHED: "PUBLISHED",
-  ARCHIVED: "ARCHIVED"
-};
-
-// generated/prisma/client.ts
-globalThis["__dirname"] = path.dirname(fileURLToPath(import.meta.url));
-var PrismaClient = getPrismaClientClass();
-
-// src/lib/prisma.ts
-import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
-var connectionString = `${process.env.DATABASE_URL}`;
-var adapter = new PrismaPg({ connectionString });
-var prisma = new PrismaClient({ adapter });
-
-// src/modules/post/post.service.ts
-var createPost = async (data, userId) => {
-  const result = await prisma.post.create({
-    data: {
-      ...data,
-      authorId: userId
-    }
-  });
-  return result;
-};
-var getAllPost = async ({
-  search,
-  tags,
-  isFeatured,
-  status,
-  authorId,
-  page,
-  limit,
-  skip,
-  sortBy,
-  sortOrder
-}) => {
-  const andConditions = [];
-  if (search) {
-    andConditions.push({
-      OR: [
-        {
-          title: {
-            contains: search,
-            mode: "insensitive"
-          }
-        },
-        {
-          content: {
-            contains: search,
-            mode: "insensitive"
-          }
-        },
-        {
-          tags: {
-            has: search
-          }
-        }
-      ]
-    });
-  }
-  if (tags.length > 0) {
-    andConditions.push({
-      tags: {
-        hasEvery: tags
-      }
-    });
-  }
-  if (typeof isFeatured === "boolean") {
-    andConditions.push({
-      isFeatured
-    });
-  }
-  if (status) {
-    andConditions.push({
-      status
-    });
-  }
-  if (authorId) {
-    andConditions.push({
-      authorId
-    });
-  }
-  const allPost = await prisma.post.findMany({
-    take: limit,
-    skip,
-    where: {
-      AND: andConditions
-    },
-    orderBy: {
-      [sortBy]: sortOrder
-    },
-    include: {
-      _count: {
-        select: { comments: true }
-      }
-    }
-  });
-  const total = await prisma.post.count({
-    where: {
-      AND: andConditions
-    }
-  });
-  return {
-    data: allPost,
-    pagination: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit)
-    }
-  };
-};
-var getPostById = async (postId) => {
-  return await prisma.$transaction(async (tx) => {
-    await tx.post.update({
-      where: {
-        id: postId
-      },
-      data: {
-        views: {
-          increment: 1
-        }
-      }
-    });
-    const postData = await tx.post.findUnique({
-      where: {
-        id: postId
-      },
-      include: {
-        comments: {
-          where: {
-            parentId: null,
-            status: CommentStatus.APPROVED
-          },
-          orderBy: { createdAt: "desc" },
-          include: {
-            replies: {
-              where: {
-                status: CommentStatus.APPROVED
-              },
-              orderBy: { createdAt: "asc" },
-              include: {
-                replies: {
-                  where: {
-                    status: CommentStatus.APPROVED
-                  },
-                  orderBy: { createdAt: "asc" }
-                }
-              }
-            }
-          }
-        },
-        _count: {
-          select: { comments: true }
-        }
-      }
-    });
-    return postData;
-  });
-};
-var getMyPosts = async (authorId) => {
-  await prisma.user.findUniqueOrThrow({
-    where: {
-      id: authorId,
-      status: "ACTIVE"
-    },
-    select: {
-      id: true
-    }
-  });
-  const result = await prisma.post.findMany({
-    where: {
-      authorId
-    },
-    orderBy: {
-      createdAt: "desc"
-    },
-    include: {
-      _count: {
-        select: {
-          comments: true
-        }
-      }
-    }
-  });
-  return result;
-};
-var updatePost = async (postId, data, authorId, isAdmin) => {
-  const postData = await prisma.post.findUniqueOrThrow({
-    where: {
-      id: postId
-    },
-    select: {
-      id: true,
-      authorId: true
-    }
-  });
-  if (!isAdmin && postData.authorId !== authorId) {
-    throw new Error("You are not the owner/creator of the post!");
-  }
-  if (!isAdmin) {
-    delete data.isFeatured;
-  }
-  const result = await prisma.post.update({
-    where: {
-      id: postData.id
-    },
-    data
-  });
-  return result;
-};
-var deletePost = async (postId, authorId, isAdmin) => {
-  const postData = await prisma.post.findUniqueOrThrow({
-    where: {
-      id: postId
-    },
-    select: {
-      id: true,
-      authorId: true
-    }
-  });
-  if (!isAdmin && postData.authorId !== authorId) {
-    throw new Error("You are not the owner/creator of the post!");
-  }
-  return await prisma.post.delete({
-    where: {
-      id: postId
-    }
-  });
-};
-var getStats = async () => {
-  return await prisma.$transaction(async (tx) => {
-    const [totalPosts, publlishedPosts, draftPosts, archivedPosts, totalComments, approvedComment, totalUsers, adminCount, userCount, totalViews] = await Promise.all([
-      await tx.post.count(),
-      await tx.post.count({ where: { status: PostStatus.PUBLISHED } }),
-      await tx.post.count({ where: { status: PostStatus.DRAFT } }),
-      await tx.post.count({ where: { status: PostStatus.ARCHIVED } }),
-      await tx.comment.count(),
-      await tx.comment.count({ where: { status: CommentStatus.APPROVED } }),
-      await tx.user.count(),
-      await tx.user.count({ where: { role: "ADMIN" } }),
-      await tx.user.count({ where: { role: "USER" } }),
-      await tx.post.aggregate({
-        _sum: { views: true }
-      })
-    ]);
-    return {
-      totalPosts,
-      publlishedPosts,
-      draftPosts,
-      archivedPosts,
-      totalComments,
-      approvedComment,
-      totalUsers,
-      adminCount,
-      userCount,
-      totalViews: totalViews._sum.views
-    };
-  });
-};
-var postService = {
-  createPost,
-  getAllPost,
-  getPostById,
-  getMyPosts,
-  updatePost,
-  deletePost,
-  getStats
-};
-
-// src/helpers/paginationSortingHelper.ts
-var paginationSortingHelper = (options) => {
-  const page = Number(options.page) || 1;
-  const limit = Number(options.limit) || 10;
-  const skip = (page - 1) * limit;
-  const sortBy = options.sortBy || "createdAt";
-  const sortOrder = options.sortOrder || "desc";
-  return {
-    page,
-    limit,
-    skip,
-    sortBy,
-    sortOrder
-  };
-};
-var paginationSortingHelper_default = paginationSortingHelper;
+import { toNodeHandler } from "better-auth/node";
 
 // src/lib/auth.ts
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+
+// src/lib/prisma.ts
+import "dotenv/config";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@prisma/client";
+var connectionString = process.env.DATABASE_URL;
+var pool = new Pool({ connectionString });
+var adapter = new PrismaPg(pool);
+var prisma = new PrismaClient({ adapter });
+
+// src/lib/auth.ts
 import nodemailer from "nodemailer";
 var transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -510,181 +29,41 @@ var transporter = nodemailer.createTransport({
   }
 });
 var auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000",
   database: prismaAdapter(prisma, {
     provider: "postgresql"
-    // or "mysql", "postgresql", ...etc
   }),
-  trustedOrigins: [process.env.APP_URL],
   user: {
     additionalFields: {
       role: {
         type: "string",
-        defaultValue: "USER",
-        required: false
+        defaultValue: "STUDENT"
       },
       phone: {
-        type: "string",
-        required: false
+        type: "string"
       },
       status: {
         type: "string",
-        defaultValue: "ACTIVE",
-        required: false
+        defaultValue: "ACTIVE"
       }
     }
   },
+  trustedOrigins: [
+    process.env.APP_URL || "http://localhost:3000",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://192.168.0.173:3000"
+  ].filter(Boolean),
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
-    requireEmailVerification: true
+    requireEmailVerification: false,
+    minPasswordLength: 6,
+    maxPasswordLength: 128
   },
   emailVerification: {
-    sendOnSignUp: true,
-    autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, url, token }, request) => {
-      try {
-        const verificationUrl = `${process.env.APP_URL}/verify-email?token=${token}`;
-        const info = await transporter.sendMail({
-          from: '"Prisma Blog" <prismablog@ph.com>',
-          to: user.email,
-          subject: "Please verify your email!",
-          html: `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Email Verification</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #f4f6f8;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 40px auto;
-      background-color: #ffffff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
-
-    .header {
-      background-color: #0f172a;
-      color: #ffffff;
-      padding: 20px;
-      text-align: center;
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 22px;
-    }
-
-    .content {
-      padding: 30px;
-      color: #334155;
-      line-height: 1.6;
-    }
-
-    .content h2 {
-      margin-top: 0;
-      font-size: 20px;
-      color: #0f172a;
-    }
-
-    .button-wrapper {
-      text-align: center;
-      margin: 30px 0;
-    }
-
-    .verify-button {
-      background-color: #2563eb;
-      color: #ffffff !important;
-      padding: 14px 28px;
-      text-decoration: none;
-      font-weight: bold;
-      border-radius: 6px;
-      display: inline-block;
-    }
-
-    .verify-button:hover {
-      background-color: #1d4ed8;
-    }
-
-    .footer {
-      background-color: #f1f5f9;
-      padding: 20px;
-      text-align: center;
-      font-size: 13px;
-      color: #64748b;
-    }
-
-    .link {
-      word-break: break-all;
-      font-size: 13px;
-      color: #2563eb;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <h1>Prisma Blog</h1>
-    </div>
-
-    <!-- Content -->
-    <div class="content">
-      <h2>Verify Your Email Address</h2>
-      <p>
-        Hello ${user.name} <br /><br />
-        Thank you for registering on <strong>Prisma Blog</strong>.
-        Please confirm your email address to activate your account.
-      </p>
-
-      <div class="button-wrapper">
-        <a href="${verificationUrl}" class="verify-button">
-          Verify Email
-        </a>
-      </div>
-
-      <p>
-        If the button doesn\u2019t work, copy and paste the link below into your browser:
-      </p>
-
-      <p class="link">
-        ${url}
-      </p>
-
-      <p>
-        This verification link will expire soon for security reasons.
-        If you did not create an account, you can safely ignore this email.
-      </p>
-
-      <p>
-        Regards, <br />
-        <strong>Prisma Blog Team</strong>
-      </p>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-      \xA9 2025 Prisma Blog. All rights reserved.
-    </div>
-  </div>
-</body>
-</html>
-`
-        });
-        console.log("Message sent:", info.messageId);
-      } catch (err) {
-        console.error(err);
-        throw err;
-      }
-    }
+    sendOnSignUp: false,
+    autoSignInAfterVerification: true
   },
   socialProviders: {
     google: {
@@ -696,536 +75,1919 @@ var auth = betterAuth({
   }
 });
 
-// src/middlewares/auth.ts
-var auth2 = (...roles) => {
-  return async (req, res, next) => {
-    try {
-      const session = await auth.api.getSession({
-        headers: req.headers
-      });
-      if (!session) {
-        return res.status(401).json({
-          success: false,
-          message: "You are not authorized!"
-        });
-      }
-      if (!session.user.emailVerified) {
-        return res.status(403).json({
-          success: false,
-          message: "Email verification required. Please verfiy your email!"
-        });
-      }
-      req.user = {
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.name,
-        role: session.user.role,
-        emailVerified: session.user.emailVerified
-      };
-      if (roles.length && !roles.includes(req.user.role)) {
-        return res.status(403).json({
-          success: false,
-          message: "Forbidden! You don't have permission to access this resources!"
-        });
-      }
-      next();
-    } catch (err) {
-      next(err);
-    }
-  };
-};
-var auth_default = auth2;
-
-// src/modules/post/post.controller.ts
-var createPost2 = async (req, res, next) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      return res.status(400).json({
-        error: "Unauthorized!"
-      });
-    }
-    const result = await postService.createPost(req.body, user.id);
-    res.status(201).json(result);
-  } catch (e) {
-    next(e);
-  }
-};
-var getAllPost2 = async (req, res) => {
-  try {
-    const { search } = req.query;
-    const searchString = typeof search === "string" ? search : void 0;
-    const tags = req.query.tags ? req.query.tags.split(",") : [];
-    const isFeatured = req.query.isFeatured ? req.query.isFeatured === "true" ? true : req.query.isFeatured === "false" ? false : void 0 : void 0;
-    const status = req.query.status;
-    const authorId = req.query.authorId;
-    const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper_default(
-      req.query
-    );
-    const result = await postService.getAllPost({
-      search: searchString,
-      tags,
-      isFeatured,
-      status,
-      authorId,
-      page,
-      limit,
-      skip,
-      sortBy,
-      sortOrder
-    });
-    res.status(200).json(result);
-  } catch (e) {
-    res.status(400).json({
-      error: "Post creation failed",
-      details: e
-    });
-  }
-};
-var getPostById2 = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    if (!postId) {
-      throw new Error("Post Id is required!");
-    }
-    const result = await postService.getPostById(postId);
-    res.status(200).json(result);
-  } catch (e) {
-    res.status(400).json({
-      error: "Post creation failed",
-      details: e
-    });
-  }
-};
-var getMyPosts2 = async (req, res) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      throw new Error("You are unauthorized!");
-    }
-    console.log("User data: ", user);
-    const result = await postService.getMyPosts(user.id);
-    res.status(200).json(result);
-  } catch (e) {
-    console.log(e);
-    res.status(400).json({
-      error: "Post fetched failed",
-      details: e
-    });
-  }
-};
-var updatePost2 = async (req, res, next) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      throw new Error("You are unauthorized!");
-    }
-    const { postId } = req.params;
-    const isAdmin = user.role === "ADMIN" /* ADMIN */;
-    const result = await postService.updatePost(
-      postId,
-      req.body,
-      user.id,
-      isAdmin
-    );
-    res.status(200).json(result);
-  } catch (e) {
-    next(e);
-  }
-};
-var deletePost2 = async (req, res) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      throw new Error("You are unauthorized!");
-    }
-    const { postId } = req.params;
-    const isAdmin = user.role === "ADMIN" /* ADMIN */;
-    const result = await postService.deletePost(
-      postId,
-      user.id,
-      isAdmin
-    );
-    res.status(200).json(result);
-  } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : "Post delete failed!";
-    res.status(400).json({
-      error: errorMessage,
-      details: e
-    });
-  }
-};
-var getStats2 = async (req, res) => {
-  try {
-    const result = await postService.getStats();
-    res.status(200).json(result);
-  } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : "Stats fetched failed!";
-    res.status(400).json({
-      error: errorMessage,
-      details: e
-    });
-  }
-};
-var PostController = {
-  createPost: createPost2,
-  getAllPost: getAllPost2,
-  getPostById: getPostById2,
-  getMyPosts: getMyPosts2,
-  updatePost: updatePost2,
-  deletePost: deletePost2,
-  getStats: getStats2
-};
-
-// src/modules/post/post.router.ts
-var router = express.Router();
-router.get(
-  "/",
-  PostController.getAllPost
-);
-router.get(
-  "/stats",
-  auth_default("ADMIN" /* ADMIN */),
-  PostController.getStats
-);
-router.get(
-  "/my-posts",
-  auth_default("USER" /* USER */, "ADMIN" /* ADMIN */),
-  PostController.getMyPosts
-);
-router.get(
-  "/:postId",
-  PostController.getPostById
-);
-router.post(
-  "/",
-  auth_default("USER" /* USER */, "ADMIN" /* ADMIN */),
-  PostController.createPost
-);
-router.patch(
-  "/:postId",
-  auth_default("USER" /* USER */, "ADMIN" /* ADMIN */),
-  PostController.updatePost
-);
-router.delete(
-  "/:postId",
-  auth_default("USER" /* USER */, "ADMIN" /* ADMIN */),
-  PostController.deletePost
-);
-var postRouter = router;
-
 // src/app.ts
-import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 
-// src/modules/comment/comment.router.ts
-import express2 from "express";
+// src/routes/tutors.ts
+import { Router } from "express";
 
-// src/modules/comment/comment.service.ts
-var createComment = async (payload) => {
-  await prisma.post.findUniqueOrThrow({
-    where: {
-      id: payload.postId
+// src/lib/request.ts
+function getHeadersInit(headers) {
+  const entries = [];
+  for (const [key, value] of Object.entries(headers)) {
+    if (value === void 0) continue;
+    if (Array.isArray(value)) {
+      for (const v of value) entries.push([key, v]);
+    } else {
+      entries.push([key, value]);
     }
-  });
-  if (payload.parentId) {
-    await prisma.comment.findUniqueOrThrow({
+  }
+  return entries;
+}
+
+// src/routes/tutors.ts
+var router = Router();
+router.get("/", async (req, res) => {
+  try {
+    const {
+      category,
+      search,
+      page = "1",
+      limit = "10",
+      minRating,
+      maxRate
+    } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+    const tutorProfileWhere = {};
+    if (category) {
+      tutorProfileWhere.subjects = {
+        some: {
+          subject: { slug: category }
+        }
+      };
+    }
+    if (minRating) {
+      tutorProfileWhere.rating = { gte: parseFloat(minRating) };
+    }
+    if (maxRate) {
+      tutorProfileWhere.hourlyRate = { lte: parseInt(maxRate) };
+    }
+    const where = {
+      role: "TUTOR"
+    };
+    if (Object.keys(tutorProfileWhere).length > 0) {
+      where.tutorProfile = tutorProfileWhere;
+    }
+    if (search) {
+      const searchConditions = [
+        { name: { contains: search, mode: "insensitive" } },
+        {
+          tutorProfile: {
+            bio: { contains: search, mode: "insensitive" }
+          }
+        }
+      ];
+      if (Object.keys(tutorProfileWhere).length > 0) {
+        searchConditions.push({
+          tutorProfile: tutorProfileWhere
+        });
+      }
+      where.AND = [
+        { role: "TUTOR" },
+        {
+          OR: searchConditions
+        }
+      ];
+      delete where.role;
+      delete where.tutorProfile;
+    }
+    const [tutors, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        include: {
+          tutorProfile: {
+            include: {
+              subjects: {
+                include: {
+                  subject: true
+                }
+              }
+            }
+          }
+        },
+        skip,
+        take: limitNum,
+        orderBy: [
+          // Order by tutors with profiles first (by rating), then by name
+          {
+            tutorProfile: {
+              rating: "desc"
+            }
+          },
+          {
+            name: "asc"
+          }
+        ]
+      }),
+      prisma.user.count({ where })
+    ]);
+    const totalPages = Math.ceil(total / limitNum);
+    res.json({
+      data: tutors,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching tutors:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch tutors" }
+    });
+  }
+});
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tutor = await prisma.user.findFirst({
       where: {
-        id: payload.parentId
-      }
-    });
-  }
-  return await prisma.comment.create({
-    data: payload
-  });
-};
-var getCommentById = async (id) => {
-  return await prisma.comment.findUnique({
-    where: {
-      id
-    },
-    include: {
-      post: {
-        select: {
-          id: true,
-          title: true,
-          views: true
+        id,
+        role: "TUTOR"
+        // Removed isVerified requirement - all tutors should be visible
+      },
+      include: {
+        tutorProfile: {
+          include: {
+            subjects: {
+              include: {
+                subject: true
+              }
+            },
+            availability: true
+          }
         }
       }
+    });
+    if (!tutor) {
+      return res.status(404).json({
+        error: { message: "Tutor not found" }
+      });
     }
-  });
-};
-var getCommentsByAuthor = async (authorId) => {
-  return await prisma.comment.findMany({
-    where: {
-      authorId
-    },
-    orderBy: { createdAt: "desc" },
-    include: {
-      post: {
-        select: {
-          id: true,
-          title: true
+    const reviews = await prisma.review.findMany({
+      where: {
+        booking: {
+          tutorId: id
         }
+      },
+      include: {
+        student: {
+          select: {
+            name: true,
+            image: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: "desc"
+      },
+      take: 10
+    });
+    res.json({
+      data: {
+        ...tutor,
+        reviews
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching tutor:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch tutor" }
+    });
+  }
+});
+router.put("/profile", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "TUTOR") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const {
+      bio,
+      hourlyRate,
+      experience,
+      education,
+      subjects,
+      availability
+    } = req.body;
+    const tutorProfile = await prisma.tutorProfile.upsert({
+      where: {
+        userId: session.user.id
+      },
+      update: {
+        bio,
+        hourlyRate,
+        experience,
+        education
+      },
+      create: {
+        userId: session.user.id,
+        bio,
+        hourlyRate,
+        experience,
+        education
+      }
+    });
+    if (subjects && Array.isArray(subjects)) {
+      await prisma.tutorSubject.deleteMany({
+        where: {
+          tutorId: tutorProfile.id
+        }
+      });
+      if (subjects.length > 0) {
+        await prisma.tutorSubject.createMany({
+          data: subjects.map((subjectId) => ({
+            tutorId: tutorProfile.id,
+            subjectId
+          }))
+        });
       }
     }
-  });
-};
-var deleteComment = async (commentId, authorId) => {
-  const commentData = await prisma.comment.findFirst({
-    where: {
-      id: commentId,
-      authorId
-    },
-    select: {
-      id: true
+    if (availability && Array.isArray(availability)) {
+      await prisma.availability.deleteMany({
+        where: {
+          tutorId: tutorProfile.id
+        }
+      });
+      if (availability.length > 0) {
+        await prisma.availability.createMany({
+          data: availability.map((avail) => ({
+            tutorId: tutorProfile.id,
+            dayOfWeek: avail.dayOfWeek,
+            startTime: avail.startTime,
+            endTime: avail.endTime,
+            isAvailable: avail.isAvailable ?? true
+          }))
+        });
+      }
     }
-  });
-  if (!commentData) {
-    throw new Error("Your provided input is invalid!");
+    res.json({
+      data: { message: "Profile updated successfully" }
+    });
+  } catch (error) {
+    console.error("Error updating tutor profile:", error);
+    res.status(500).json({
+      error: { message: "Failed to update profile" }
+    });
   }
-  return await prisma.comment.delete({
-    where: {
-      id: commentData.id
-    }
-  });
-};
-var updateComment = async (commentId, data, authorId) => {
-  const commentData = await prisma.comment.findFirst({
-    where: {
-      id: commentId,
-      authorId
-    },
-    select: {
-      id: true
-    }
-  });
-  if (!commentData) {
-    throw new Error("Your provided input is invalid!");
-  }
-  return await prisma.comment.update({
-    where: {
-      id: commentId,
-      authorId
-    },
-    data
-  });
-};
-var moderateComment = async (id, data) => {
-  const commentData = await prisma.comment.findUniqueOrThrow({
-    where: {
-      id
-    },
-    select: {
-      id: true,
-      status: true
-    }
-  });
-  if (commentData.status === data.status) {
-    throw new Error(`Your provided status (${data.status}) is already up to date.`);
-  }
-  return await prisma.comment.update({
-    where: {
-      id
-    },
-    data
-  });
-};
-var CommentService = {
-  createComment,
-  getCommentById,
-  getCommentsByAuthor,
-  deleteComment,
-  updateComment,
-  moderateComment
-};
+});
+var tutors_default = router;
 
-// src/modules/comment/comment.controller.ts
-var createComment2 = async (req, res) => {
+// src/routes/tutor.ts
+import { Router as Router2 } from "express";
+var router2 = Router2();
+router2.get("/profile", async (req, res) => {
   try {
-    const user = req.user;
-    req.body.authorId = user?.id;
-    const result = await CommentService.createComment(req.body);
-    res.status(201).json(result);
-  } catch (e) {
-    res.status(400).json({
-      error: "Comment creation failed",
-      details: e
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
     });
-  }
-};
-var getCommentById2 = async (req, res) => {
-  try {
-    const { commentId } = req.params;
-    const result = await CommentService.getCommentById(commentId);
-    res.status(200).json(result);
-  } catch (e) {
-    res.status(400).json({
-      error: "Comment fetched failed",
-      details: e
-    });
-  }
-};
-var getCommentsByAuthor2 = async (req, res) => {
-  try {
-    const { authorId } = req.params;
-    const result = await CommentService.getCommentsByAuthor(authorId);
-    res.status(200).json(result);
-  } catch (e) {
-    res.status(400).json({
-      error: "Comment fetched failed",
-      details: e
-    });
-  }
-};
-var deleteComment2 = async (req, res) => {
-  try {
-    const user = req.user;
-    const { commentId } = req.params;
-    const result = await CommentService.deleteComment(commentId, user?.id);
-    res.status(200).json(result);
-  } catch (e) {
-    console.log(e);
-    res.status(400).json({
-      error: "Comment delete failed!",
-      details: e
-    });
-  }
-};
-var updateComment2 = async (req, res) => {
-  try {
-    const user = req.user;
-    const { commentId } = req.params;
-    const result = await CommentService.updateComment(commentId, req.body, user?.id);
-    res.status(200).json(result);
-  } catch (e) {
-    console.log(e);
-    res.status(400).json({
-      error: "Comment update failed!",
-      details: e
-    });
-  }
-};
-var moderateComment2 = async (req, res) => {
-  try {
-    const { commentId } = req.params;
-    const result = await CommentService.moderateComment(commentId, req.body);
-    res.status(200).json(result);
-  } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : "Comment update failed!";
-    res.status(400).json({
-      error: errorMessage,
-      details: e
-    });
-  }
-};
-var CommentController = {
-  createComment: createComment2,
-  getCommentById: getCommentById2,
-  getCommentsByAuthor: getCommentsByAuthor2,
-  deleteComment: deleteComment2,
-  updateComment: updateComment2,
-  moderateComment: moderateComment2
-};
-
-// src/modules/comment/comment.router.ts
-var router2 = express2.Router();
-router2.get(
-  "/author/:authorId",
-  CommentController.getCommentsByAuthor
-);
-router2.get(
-  "/:commentId",
-  CommentController.getCommentById
-);
-router2.post(
-  "/",
-  auth_default("USER" /* USER */, "ADMIN" /* ADMIN */),
-  CommentController.createComment
-);
-router2.delete(
-  "/:commentId",
-  auth_default("USER" /* USER */, "ADMIN" /* ADMIN */),
-  CommentController.deleteComment
-);
-router2.patch(
-  "/:commentId",
-  auth_default("USER" /* USER */, "ADMIN" /* ADMIN */),
-  CommentController.updateComment
-);
-router2.patch(
-  "/:commentId/moderate",
-  auth_default("ADMIN" /* ADMIN */),
-  CommentController.moderateComment
-);
-var commentRouter = router2;
-
-// src/middlewares/globalErrorHandler.ts
-function errorHandler(err, req, res, next) {
-  let statusCode = 500;
-  let errorMessage = "Internal Server Error";
-  let errorDetails = err;
-  if (err instanceof prismaNamespace_exports.PrismaClientValidationError) {
-    statusCode = 400;
-    errorMessage = "You provide incorrect field type or missing fields!";
-  } else if (err instanceof prismaNamespace_exports.PrismaClientKnownRequestError) {
-    if (err.code === "P2025") {
-      statusCode = 400;
-      errorMessage = "An operation failed because it depends on one or more records that were required but not found.";
-    } else if (err.code === "P2002") {
-      statusCode = 400;
-      errorMessage = "Duplicate key error";
-    } else if (err.code === "P2003") {
-      statusCode = 400;
-      errorMessage = "Foreign key constraint failed";
+    if (!session?.user || session.user.role !== "TUTOR") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
     }
-  } else if (err instanceof prismaNamespace_exports.PrismaClientUnknownRequestError) {
-    statusCode = 500;
-    errorMessage = "Error occurred during query execution";
-  } else if (err instanceof prismaNamespace_exports.PrismaClientInitializationError) {
-    if (err.errorCode === "P1000") {
-      statusCode = 401;
-      errorMessage = "Authentication failed. Please check your creditials!";
-    } else if (err.errorCode === "P1001") {
-      statusCode = 400;
-      errorMessage = "Can't reach database server";
+    const tutorProfile = await prisma.tutorProfile.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        subjects: {
+          include: {
+            subject: true
+          }
+        },
+        availability: true
+      }
+    });
+    if (!tutorProfile) {
+      return res.status(404).json({
+        error: { message: "Tutor profile not found" }
+      });
     }
+    const profileForFrontend = {
+      ...tutorProfile,
+      hourlyRate: Math.round(tutorProfile.hourlyRate / 100)
+      // Convert cents to dollars
+    };
+    res.json({
+      data: profileForFrontend
+    });
+  } catch (error) {
+    console.error("Error fetching tutor profile:", error);
+    res.status(500).json({
+      error: { message: "Internal server error" }
+    });
   }
-  res.status(statusCode);
-  res.json({
-    message: errorMessage,
-    error: errorDetails
+});
+router2.get("/stats", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "TUTOR") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const tutorProfile = await prisma.tutorProfile.findUnique({
+      where: { userId: session.user.id }
+    });
+    if (!tutorProfile) {
+      return res.status(404).json({
+        error: { message: "Tutor profile not found" }
+      });
+    }
+    const bookings = await prisma.booking.findMany({
+      where: { tutorId: tutorProfile.id },
+      include: {
+        review: true
+      }
+    });
+    const totalSessions = bookings.length;
+    const completedSessions = bookings.filter((b) => b.status === "COMPLETED").length;
+    const totalEarnings = bookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+    const totalReviews = bookings.filter((b) => b.review).length;
+    const averageRating = totalReviews > 0 ? bookings.reduce((sum, b) => sum + (b.review?.rating || 0), 0) / totalReviews : 0;
+    res.json({
+      data: {
+        totalSessions,
+        completedSessions,
+        totalEarnings: Math.round(totalEarnings / 100),
+        // Convert cents to dollars
+        rating: Math.round(averageRating * 10) / 10,
+        totalReviews
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching tutor stats:", error);
+    res.status(500).json({
+      error: { message: "Internal server error" }
+    });
+  }
+});
+router2.get("/bookings", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "TUTOR") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const tutorProfile = await prisma.tutorProfile.findUnique({
+      where: { userId: session.user.id }
+    });
+    if (!tutorProfile) {
+      return res.status(404).json({
+        error: { message: "Tutor profile not found" }
+      });
+    }
+    const { status, page = "1", limit = "10" } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+    const where = { tutorId: tutorProfile.id };
+    if (status) {
+      where.status = status;
+    }
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({
+        where,
+        include: {
+          student: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true
+            }
+          },
+          review: true
+        },
+        orderBy: { date: "desc" },
+        skip,
+        take: limitNum
+      }),
+      prisma.booking.count({ where })
+    ]);
+    res.json({
+      data: bookings,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching tutor bookings:", error);
+    res.status(500).json({
+      error: { message: "Internal server error" }
+    });
+  }
+});
+router2.get("/students", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "TUTOR") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const tutorProfile = await prisma.tutorProfile.findUnique({
+      where: { userId: session.user.id }
+    });
+    if (!tutorProfile) {
+      return res.status(404).json({
+        error: { message: "Tutor profile not found" }
+      });
+    }
+    const bookings = await prisma.booking.findMany({
+      where: { tutorId: tutorProfile.id },
+      include: {
+        student: true,
+        review: true
+      }
+    });
+    const studentMap = /* @__PURE__ */ new Map();
+    bookings.forEach((booking) => {
+      const studentId = booking.studentId;
+      if (!studentMap.has(studentId)) {
+        studentMap.set(studentId, {
+          id: booking.student.id,
+          name: booking.student.name,
+          email: booking.student.email,
+          image: booking.student.image,
+          subject: "General",
+          // You might want to track this separately
+          totalSessions: 0,
+          completedSessions: 0,
+          upcomingSessions: 0,
+          lastSession: null,
+          ratings: []
+        });
+      }
+      const student = studentMap.get(studentId);
+      student.totalSessions++;
+      if (booking.status === "COMPLETED") {
+        student.completedSessions++;
+        if (booking.review) {
+          student.ratings.push(booking.review.rating);
+        }
+      } else if (booking.status === "CONFIRMED") {
+        student.upcomingSessions++;
+      }
+      if (!student.lastSession || new Date(booking.date) > new Date(student.lastSession)) {
+        student.lastSession = booking.date;
+      }
+    });
+    const students = Array.from(studentMap.values()).map((student) => ({
+      ...student,
+      rating: student.ratings.length > 0 ? student.ratings.reduce((sum, r) => sum + r, 0) / student.ratings.length : void 0
+    }));
+    res.json({
+      data: students
+    });
+  } catch (error) {
+    console.error("Error fetching tutor students:", error);
+    res.status(500).json({
+      error: { message: "Internal server error" }
+    });
+  }
+});
+router2.get("/availability", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "TUTOR") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const tutorProfile = await prisma.tutorProfile.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        availability: true
+      }
+    });
+    if (!tutorProfile) {
+      return res.status(404).json({
+        error: { message: "Tutor profile not found" }
+      });
+    }
+    res.json({
+      data: tutorProfile.availability || []
+    });
+  } catch (error) {
+    console.error("Error fetching tutor availability:", error);
+    res.status(500).json({
+      error: { message: "Internal server error" }
+    });
+  }
+});
+router2.put("/profile", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "TUTOR") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const {
+      bio,
+      hourlyRate,
+      experience,
+      education,
+      subjects,
+      availability
+    } = req.body;
+    if (hourlyRate !== void 0 && (typeof hourlyRate !== "number" || hourlyRate < 0)) {
+      return res.status(400).json({
+        error: { message: "Invalid hourly rate" }
+      });
+    }
+    if (experience !== void 0 && (typeof experience !== "number" || experience < 0)) {
+      return res.status(400).json({
+        error: { message: "Invalid experience" }
+      });
+    }
+    const hourlyRateInCents = hourlyRate ? Math.round(hourlyRate * 100) : void 0;
+    const updateData = {};
+    if (bio !== void 0) updateData.bio = bio;
+    if (hourlyRateInCents !== void 0) updateData.hourlyRate = hourlyRateInCents;
+    if (experience !== void 0) updateData.experience = experience;
+    if (education !== void 0) updateData.education = education;
+    const tutorProfile = await prisma.tutorProfile.upsert({
+      where: { userId: session.user.id },
+      update: updateData,
+      create: {
+        userId: session.user.id,
+        bio: bio || "",
+        hourlyRate: hourlyRateInCents || 5e3,
+        // Default $50/hour in cents
+        experience: experience || 0,
+        education: education || ""
+      }
+    });
+    if (subjects && Array.isArray(subjects)) {
+      await prisma.tutorSubject.deleteMany({
+        where: { tutorId: tutorProfile.id }
+      });
+      if (subjects.length > 0) {
+        await prisma.tutorSubject.createMany({
+          data: subjects.map((subjectId) => ({
+            tutorId: tutorProfile.id,
+            subjectId
+          }))
+        });
+      }
+    }
+    if (availability && Array.isArray(availability)) {
+      await prisma.availability.deleteMany({
+        where: { tutorId: tutorProfile.id }
+      });
+      if (availability.length > 0) {
+        await prisma.availability.createMany({
+          data: availability.map((avail) => ({
+            tutorId: tutorProfile.id,
+            dayOfWeek: avail.dayOfWeek,
+            startTime: avail.startTime,
+            endTime: avail.endTime,
+            isAvailable: avail.isAvailable ?? true
+          }))
+        });
+      }
+    }
+    const updatedProfile = await prisma.tutorProfile.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        subjects: {
+          include: {
+            subject: true
+          }
+        },
+        availability: true
+      }
+    });
+    const profileForFrontend = updatedProfile ? {
+      ...updatedProfile,
+      hourlyRate: Math.round(updatedProfile.hourlyRate / 100)
+      // Convert cents to dollars
+    } : null;
+    res.json({
+      data: profileForFrontend
+    });
+  } catch (error) {
+    console.error("Error updating tutor profile:", error);
+    res.status(500).json({
+      error: { message: "Failed to update profile" }
+    });
+  }
+});
+router2.put("/availability", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "TUTOR") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const body = req.body;
+    const availability = Array.isArray(body) ? body : body?.availability;
+    if (!Array.isArray(availability)) {
+      return res.status(400).json({
+        error: { message: "availability must be an array (or body.availability)" }
+      });
+    }
+    const tutorProfile = await prisma.tutorProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true }
+    });
+    if (!tutorProfile) {
+      return res.status(404).json({
+        error: { message: "Tutor profile not found. Create profile first." }
+      });
+    }
+    await prisma.availability.deleteMany({
+      where: { tutorId: tutorProfile.id }
+    });
+    if (availability.length > 0) {
+      await prisma.availability.createMany({
+        data: availability.map((avail) => ({
+          tutorId: tutorProfile.id,
+          dayOfWeek: avail.dayOfWeek,
+          startTime: avail.startTime,
+          endTime: avail.endTime,
+          isAvailable: avail.isAvailable ?? true
+        }))
+      });
+    }
+    res.json({
+      data: { message: "Availability updated successfully" }
+    });
+  } catch (error) {
+    console.error("Error updating availability:", error);
+    res.status(500).json({
+      error: { message: "Failed to update availability" }
+    });
+  }
+});
+router2.get("/stats", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "TUTOR") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const tutorProfile = await prisma.tutorProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true, rating: true, totalReviews: true }
+    });
+    if (!tutorProfile) {
+      return res.json({
+        data: {
+          totalSessions: 0,
+          completedSessions: 0,
+          totalEarnings: 0,
+          rating: 0,
+          totalReviews: 0
+        }
+      });
+    }
+    const [totalBookings, completedBookings, earningsResult] = await Promise.all([
+      prisma.booking.count({
+        where: { tutorId: tutorProfile.id }
+      }),
+      prisma.booking.count({
+        where: {
+          tutorId: tutorProfile.id,
+          status: "COMPLETED"
+        }
+      }),
+      prisma.booking.aggregate({
+        where: {
+          tutorId: tutorProfile.id,
+          status: "COMPLETED"
+        },
+        _sum: { totalAmount: true }
+      })
+    ]);
+    res.json({
+      data: {
+        totalSessions: totalBookings,
+        completedSessions: completedBookings,
+        totalEarnings: earningsResult._sum.totalAmount ?? 0,
+        rating: tutorProfile.rating,
+        totalReviews: tutorProfile.totalReviews
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching tutor stats:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch stats" }
+    });
+  }
+});
+router2.get("/students", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "TUTOR") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const tutorProfile = await prisma.tutorProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true }
+    });
+    if (!tutorProfile) {
+      return res.json({ data: [] });
+    }
+    const bookings = await prisma.booking.findMany({
+      where: { tutorId: tutorProfile.id },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true
+          }
+        },
+        review: {
+          select: {
+            rating: true
+          }
+        }
+      },
+      orderBy: {
+        date: "desc"
+      }
+    });
+    const studentMap = /* @__PURE__ */ new Map();
+    for (const booking of bookings) {
+      const studentId = booking.studentId;
+      if (!studentMap.has(studentId)) {
+        studentMap.set(studentId, {
+          id: studentId,
+          name: booking.student.name,
+          email: booking.student.email,
+          image: booking.student.image,
+          subject: "General",
+          // You can enhance this based on your schema
+          totalSessions: 0,
+          completedSessions: 0,
+          upcomingSessions: 0,
+          lastSession: null,
+          ratings: []
+        });
+      }
+      const studentData = studentMap.get(studentId);
+      studentData.totalSessions++;
+      if (booking.status === "COMPLETED") {
+        studentData.completedSessions++;
+      } else if (booking.status === "CONFIRMED") {
+        studentData.upcomingSessions++;
+      }
+      if (!studentData.lastSession || new Date(booking.date) > new Date(studentData.lastSession)) {
+        studentData.lastSession = booking.date;
+      }
+      if (booking.review?.rating) {
+        studentData.ratings.push(booking.review.rating);
+      }
+    }
+    const students = Array.from(studentMap.values()).map((student) => ({
+      id: student.id,
+      name: student.name,
+      email: student.email,
+      image: student.image,
+      subject: student.subject,
+      totalSessions: student.totalSessions,
+      completedSessions: student.completedSessions,
+      upcomingSessions: student.upcomingSessions,
+      lastSession: student.lastSession,
+      rating: student.ratings.length > 0 ? student.ratings.reduce((sum, r) => sum + r, 0) / student.ratings.length : void 0
+    }));
+    res.json({ data: students });
+  } catch (error) {
+    console.error("Error fetching tutor students:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch students" }
+    });
+  }
+});
+var tutor_default = router2;
+
+// src/routes/bookings.ts
+import { Router as Router3 } from "express";
+
+// src/lib/validators.ts
+import { z } from "zod";
+var createBookingSchema = z.object({
+  tutorId: z.string().min(1, "tutorId is required"),
+  date: z.string().min(1, "date is required"),
+  startTime: z.string().regex(/^\d{1,2}:\d{2}$/, "startTime must be HH:MM"),
+  endTime: z.string().regex(/^\d{1,2}:\d{2}$/, "endTime must be HH:MM"),
+  notes: z.string().optional()
+});
+var createReviewSchema = z.object({
+  bookingId: z.string().min(1, "bookingId is required"),
+  rating: z.coerce.number().min(1).max(5).default(5),
+  comment: z.string().optional()
+});
+
+// src/routes/bookings.ts
+var router3 = Router3();
+router3.post("/", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "STUDENT") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const parseResult = createBookingSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: {
+          message: "Validation failed",
+          details: parseResult.error.flatten().fieldErrors
+        }
+      });
+    }
+    const { tutorId, date, startTime, endTime, notes } = parseResult.data;
+    const tutorProfile = await prisma.tutorProfile.findFirst({
+      where: {
+        id: tutorId
+      },
+      include: {
+        user: {
+          select: { id: true, role: true }
+        }
+      }
+    });
+    if (!tutorProfile || tutorProfile.user?.role !== "TUTOR") {
+      return res.status(404).json({
+        error: { message: "Tutor not found" }
+      });
+    }
+    const [year, month, day] = date.split("-").map(Number);
+    const bookingDate = new Date(year, month - 1, day);
+    const existingBooking = await prisma.booking.findFirst({
+      where: {
+        tutorId,
+        date: bookingDate,
+        status: {
+          in: ["CONFIRMED", "COMPLETED"]
+        },
+        OR: [
+          {
+            AND: [
+              { startTime: { lte: startTime } },
+              { endTime: { gt: startTime } }
+            ]
+          },
+          {
+            AND: [
+              { startTime: { lt: endTime } },
+              { endTime: { gte: endTime } }
+            ]
+          }
+        ]
+      }
+    });
+    if (existingBooking) {
+      return res.status(409).json({
+        error: { message: "Time slot already booked" }
+      });
+    }
+    const booking = await prisma.booking.create({
+      data: {
+        studentId: session.user.id,
+        tutorId: tutorProfile.id,
+        date: bookingDate,
+        startTime,
+        endTime,
+        status: "CONFIRMED",
+        totalAmount: tutorProfile.hourlyRate,
+        notes: notes ?? null
+      },
+      include: {
+        student: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        tutor: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+    res.status(201).json({
+      data: booking
+    });
+  } catch (error) {
+    console.error("Error creating booking:", error);
+    res.status(500).json({
+      error: { message: "Failed to create booking" }
+    });
+  }
+});
+router3.get("/", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "STUDENT") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const { status, page = "1", limit = "10" } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+    const where = {
+      studentId: session.user.id
+    };
+    if (status) {
+      where.status = status;
+    }
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({
+        where,
+        include: {
+          tutor: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true,
+                  image: true
+                }
+              }
+            }
+          },
+          review: true
+        },
+        skip,
+        take: limitNum,
+        orderBy: {
+          date: "desc"
+        }
+      }),
+      prisma.booking.count({ where })
+    ]);
+    const totalPages = Math.ceil(total / limitNum);
+    res.json({
+      data: bookings,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching student bookings:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch bookings" }
+    });
+  }
+});
+router3.get("/my", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user) {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const { status, page = "1", limit = "10" } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+    const where = {};
+    if (session.user.role === "STUDENT") {
+      where.studentId = session.user.id;
+    } else if (session.user.role === "TUTOR") {
+      const profile = await prisma.tutorProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true }
+      });
+      if (!profile) {
+        return res.json({
+          data: [],
+          pagination: { page: pageNum, limit: limitNum, total: 0, totalPages: 0 }
+        });
+      }
+      where.tutorId = profile.id;
+    }
+    if (status) {
+      where.status = status;
+    }
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({
+        where,
+        include: {
+          student: {
+            select: {
+              name: true,
+              image: true
+            }
+          },
+          tutor: {
+            select: {
+              id: true,
+              hourlyRate: true
+            },
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  image: true
+                }
+              }
+            }
+          },
+          review: true
+        },
+        skip,
+        take: limitNum,
+        orderBy: {
+          date: "desc"
+        }
+      }),
+      prisma.booking.count({ where })
+    ]);
+    const totalPages = Math.ceil(total / limitNum);
+    res.json({
+      data: bookings,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch bookings" }
+    });
+  }
+});
+router3.patch("/:id", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user) {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const { id } = req.params;
+    const { status, date, startTime, endTime } = req.body;
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id
+      }
+    });
+    if (!booking) {
+      return res.status(404).json({
+        error: { message: "Booking not found" }
+      });
+    }
+    if (session.user.role === "STUDENT" && booking.studentId !== session.user.id) {
+      return res.status(403).json({
+        error: { message: "Forbidden" }
+      });
+    }
+    if (session.user.role === "TUTOR") {
+      const profile = await prisma.tutorProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true }
+      });
+      if (!profile || booking.tutorId !== profile.id) {
+        return res.status(403).json({
+          error: { message: "Forbidden" }
+        });
+      }
+    }
+    const updateData = { status };
+    if (date || startTime || endTime) {
+      if (session.user.role !== "STUDENT" || booking.studentId !== session.user.id) {
+        return res.status(403).json({
+          error: { message: "Only students can reschedule their own bookings" }
+        });
+      }
+      if (booking.status !== "CONFIRMED") {
+        return res.status(400).json({
+          error: { message: "Only confirmed bookings can be rescheduled" }
+        });
+      }
+      let newDate = booking.date;
+      if (date) {
+        const [year, month, day] = date.split("-").map(Number);
+        newDate = new Date(year, month - 1, day);
+      }
+      const newStartTime = startTime || booking.startTime;
+      const newEndTime = endTime || booking.endTime;
+      const conflictBooking = await prisma.booking.findFirst({
+        where: {
+          tutorId: booking.tutorId,
+          date: newDate,
+          status: {
+            in: ["CONFIRMED", "COMPLETED"]
+          },
+          id: { not: id },
+          // Exclude current booking
+          OR: [
+            {
+              AND: [
+                { startTime: { lte: newStartTime } },
+                { endTime: { gt: newStartTime } }
+              ]
+            },
+            {
+              AND: [
+                { startTime: { lt: newEndTime } },
+                { endTime: { gte: newEndTime } }
+              ]
+            }
+          ]
+        }
+      });
+      if (conflictBooking) {
+        return res.status(409).json({
+          error: { message: "Time slot already booked" }
+        });
+      }
+      updateData.date = newDate;
+      updateData.startTime = newStartTime;
+      updateData.endTime = newEndTime;
+    }
+    const updatedBooking = await prisma.booking.update({
+      where: {
+        id
+      },
+      data: updateData,
+      include: {
+        student: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        tutor: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+    res.json({
+      data: updatedBooking
+    });
+  } catch (error) {
+    console.error("Error updating booking:", error);
+    res.status(500).json({
+      error: { message: "Failed to update booking" }
+    });
+  }
+});
+router3.get("/:id", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user) {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const { id } = req.params;
+    let tutorProfileId = null;
+    if (session.user.role === "TUTOR") {
+      const profile = await prisma.tutorProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true }
+      });
+      tutorProfileId = profile?.id ?? null;
+    }
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id,
+        OR: [
+          { studentId: session.user.id },
+          ...tutorProfileId ? [{ tutorId: tutorProfileId }] : []
+        ]
+      },
+      include: {
+        student: {
+          select: {
+            name: true,
+            email: true,
+            image: true
+          }
+        },
+        tutor: {
+          select: {
+            id: true,
+            hourlyRate: true,
+            bio: true
+          },
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                image: true
+              }
+            }
+          }
+        },
+        review: true
+      }
+    });
+    if (!booking) {
+      return res.status(404).json({
+        error: { message: "Booking not found" }
+      });
+    }
+    res.json({
+      data: booking
+    });
+  } catch (error) {
+    console.error("Error fetching booking:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch booking" }
+    });
+  }
+});
+var bookings_default = router3;
+
+// src/routes/categories.ts
+import { Router as Router4 } from "express";
+var router4 = Router4();
+router4.get("/", async (_req, res) => {
+  try {
+    const categories = await prisma.subject.findMany({
+      orderBy: { name: "asc" }
+    });
+    res.json({ data: categories });
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch categories" }
+    });
+  }
+});
+var categories_default = router4;
+
+// src/routes/reviews.ts
+import { Router as Router5 } from "express";
+var router5 = Router5();
+router5.post("/", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "STUDENT") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const parseResult = createReviewSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: {
+          message: "Validation failed",
+          details: parseResult.error.flatten().fieldErrors
+        }
+      });
+    }
+    const { bookingId, rating, comment } = parseResult.data;
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id: bookingId,
+        studentId: session.user.id,
+        status: {
+          in: ["CONFIRMED", "COMPLETED"]
+        }
+      },
+      include: {
+        tutor: true
+      }
+    });
+    if (!booking) {
+      return res.status(404).json({
+        error: {
+          message: "Booking not found, or you can only review your own completed sessions."
+        }
+      });
+    }
+    const existing = await prisma.review.findUnique({
+      where: { bookingId }
+    });
+    if (existing) {
+      return res.status(409).json({
+        error: { message: "You have already reviewed this session." }
+      });
+    }
+    const review = await prisma.review.create({
+      data: {
+        bookingId,
+        studentId: session.user.id,
+        rating,
+        comment: comment ?? null
+      }
+    });
+    const reviews = await prisma.review.findMany({
+      where: { booking: { tutorId: booking.tutorId } },
+      select: { rating: true }
+    });
+    const totalReviews = reviews.length;
+    const avgRating = totalReviews > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / totalReviews : 0;
+    await prisma.tutorProfile.update({
+      where: { id: booking.tutorId },
+      data: {
+        rating: Math.round(avgRating * 10) / 10,
+        totalReviews
+      }
+    });
+    res.status(201).json({ data: review });
+  } catch (error) {
+    console.error("Error creating review:", error);
+    res.status(500).json({
+      error: { message: "Failed to create review" }
+    });
+  }
+});
+router5.get("/tutor/:tutorId", async (req, res) => {
+  try {
+    const { tutorId } = req.params;
+    const reviews = await prisma.review.findMany({
+      where: {
+        booking: {
+          tutorId
+        }
+      },
+      include: {
+        student: {
+          select: {
+            name: true,
+            image: true
+          }
+        },
+        booking: {
+          select: {
+            date: true,
+            createdAt: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: "desc"
+      }
+    });
+    res.json({
+      data: reviews.map((review) => ({
+        id: review.id,
+        user: review.student.name,
+        userImage: review.student.image,
+        rating: review.rating,
+        comment: review.comment,
+        date: review.booking.date,
+        createdAt: review.createdAt
+      }))
+    });
+  } catch (error) {
+    console.error("Error fetching tutor reviews:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch reviews" }
+    });
+  }
+});
+var reviews_default = router5;
+
+// src/routes/admin.ts
+import { Router as Router6 } from "express";
+var router6 = Router6();
+async function requireAdmin(req, res) {
+  const session = await auth.api.getSession({
+    headers: getHeadersInit(req.headers)
   });
+  if (!session?.user || session.user.role !== "ADMIN") {
+    res.status(403).json({ error: { message: "Forbidden" } });
+    return false;
+  }
+  return true;
 }
-var globalErrorHandler_default = errorHandler;
+router6.get("/users", async (req, res) => {
+  try {
+    if (!await requireAdmin(req, res)) return;
+    const { role, status, page = "1", limit = "20" } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+    const where = {};
+    if (role) where.role = role;
+    if (status) where.status = status;
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        include: {
+          tutorProfile: {
+            select: {
+              id: true,
+              hourlyRate: true,
+              rating: true,
+              totalReviews: true
+            }
+          }
+        },
+        skip,
+        take: limitNum,
+        orderBy: { createdAt: "desc" }
+      }),
+      prisma.user.count({ where })
+    ]);
+    res.json({
+      data: users,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching admin users:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch users" }
+    });
+  }
+});
+router6.patch("/users/:id", async (req, res) => {
+  try {
+    if (!await requireAdmin(req, res)) return;
+    const { id } = req.params;
+    const { status } = req.body;
+    const user = await prisma.user.findUnique({
+      where: { id }
+    });
+    if (!user) {
+      return res.status(404).json({
+        error: { message: "User not found" }
+      });
+    }
+    const updated = await prisma.user.update({
+      where: { id },
+      data: {
+        status: status ?? user.status
+      }
+    });
+    res.json({ data: updated });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({
+      error: { message: "Failed to update user" }
+    });
+  }
+});
+router6.patch("/tutors/:id/verify", async (req, res) => {
+  try {
+    if (!await requireAdmin(req, res)) return;
+    const { id } = req.params;
+    const profile = await prisma.tutorProfile.findUnique({
+      where: { id }
+    });
+    if (!profile) {
+      return res.status(404).json({
+        error: { message: "Tutor profile not found" }
+      });
+    }
+    const updated = await prisma.tutorProfile.update({
+      where: { id },
+      data: { isVerified: true }
+    });
+    res.json({ data: updated });
+  } catch (error) {
+    console.error("Error verifying tutor:", error);
+    res.status(500).json({
+      error: { message: "Failed to verify tutor" }
+    });
+  }
+});
+router6.get("/bookings", async (req, res) => {
+  try {
+    if (!await requireAdmin(req, res)) return;
+    const { status, page = "1", limit = "20" } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+    const where = {};
+    if (status) where.status = status;
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({
+        where,
+        include: {
+          student: true,
+          tutor: {
+            include: {
+              user: true
+            }
+          },
+          review: true
+        },
+        skip,
+        take: limitNum,
+        orderBy: { date: "desc" }
+      }),
+      prisma.booking.count({ where })
+    ]);
+    res.json({
+      data: bookings,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching admin bookings:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch bookings" }
+    });
+  }
+});
+router6.get("/categories", async (req, res) => {
+  try {
+    if (!await requireAdmin(req, res)) return;
+    const categories = await prisma.subject.findMany({
+      orderBy: { name: "asc" }
+    });
+    res.json({ data: categories });
+  } catch (error) {
+    console.error("Error fetching admin categories:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch categories" }
+    });
+  }
+});
+router6.post("/categories", async (req, res) => {
+  try {
+    if (!await requireAdmin(req, res)) return;
+    const { name, slug, description, icon } = req.body;
+    if (!name || !slug) {
+      return res.status(400).json({
+        error: { message: "name and slug are required" }
+      });
+    }
+    const category = await prisma.subject.create({
+      data: {
+        name,
+        slug: slug.toLowerCase().replace(/\s+/g, "-"),
+        description: description ?? null,
+        icon: icon ?? null
+      }
+    });
+    res.status(201).json({ data: category });
+  } catch (error) {
+    console.error("Error creating category:", error);
+    res.status(500).json({
+      error: { message: "Failed to create category" }
+    });
+  }
+});
+router6.patch("/categories/:id", async (req, res) => {
+  try {
+    if (!await requireAdmin(req, res)) return;
+    const { id } = req.params;
+    const { name, slug, description, icon } = req.body;
+    const category = await prisma.subject.update({
+      where: { id },
+      data: {
+        ...name != null && { name },
+        ...slug != null && { slug: slug.toLowerCase().replace(/\s+/g, "-") },
+        ...description !== void 0 && { description },
+        ...icon !== void 0 && { icon }
+      }
+    });
+    res.json({ data: category });
+  } catch (error) {
+    console.error("Error updating category:", error);
+    res.status(500).json({
+      error: { message: "Failed to update category" }
+    });
+  }
+});
+router6.delete("/categories/:id", async (req, res) => {
+  try {
+    if (!await requireAdmin(req, res)) return;
+    const { id } = req.params;
+    await prisma.subject.delete({
+      where: { id }
+    });
+    res.json({ data: { message: "Category deleted" } });
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    res.status(500).json({
+      error: { message: "Failed to delete category" }
+    });
+  }
+});
+router6.post("/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        error: { message: "Name, email, and password are required" }
+      });
+    }
+    const existingAdmin = await prisma.user.findFirst({
+      where: { role: "ADMIN" }
+    });
+    if (existingAdmin) {
+      const session = await auth.api.getSession({
+        headers: getHeadersInit(req.headers)
+      });
+      if (!session?.user || session.user.role !== "ADMIN") {
+        return res.status(403).json({
+          error: { message: "Only existing admins can create new admins" }
+        });
+      }
+    }
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+    if (existingUser) {
+      return res.status(400).json({
+        error: { message: "Email already exists" }
+      });
+    }
+    const result = await auth.api.signUpEmail({
+      body: {
+        name,
+        email,
+        password,
+        phone: "",
+        // Required field
+        role: "ADMIN"
+      }
+    });
+    if (!result.user) {
+      return res.status(400).json({
+        error: { message: "Failed to create admin" }
+      });
+    }
+    res.status(201).json({
+      data: {
+        message: "Admin created successfully",
+        admin: {
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error creating admin:", error);
+    res.status(500).json({
+      error: { message: "Failed to create admin" }
+    });
+  }
+});
+router6.get("/stats", async (req, res) => {
+  try {
+    if (!await requireAdmin(req, res)) return;
+    const [totalUsers, totalTutors, totalStudents, totalBookings, totalReviews] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({ where: { role: "TUTOR" } }),
+      prisma.user.count({ where: { role: "STUDENT" } }),
+      prisma.booking.count(),
+      prisma.review.count()
+    ]);
+    const completedBookings = await prisma.booking.count({
+      where: { status: "COMPLETED" }
+    });
+    res.json({
+      data: {
+        totalUsers,
+        totalTutors,
+        totalStudents,
+        totalBookings,
+        completedBookings,
+        totalReviews
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching admin stats:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch stats" }
+    });
+  }
+});
+router6.put("/profile", async (req, res) => {
+  try {
+    if (!await requireAdmin(req, res)) return;
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user) {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const { name, phone } = req.body;
+    const updatedUser = await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        ...name && { name },
+        ...phone !== void 0 && { phone }
+        // bio field removed - not in database schema
+      }
+    });
+    res.json({
+      data: updatedUser
+    });
+  } catch (error) {
+    console.error("Error updating admin profile:", error);
+    res.status(500).json({
+      error: { message: "Failed to update profile" }
+    });
+  }
+});
+var admin_default = router6;
 
-// src/middlewares/notFound.ts
-function notFound(req, res) {
-  res.status(404).json({
-    message: "Route not found!",
-    path: req.originalUrl,
-    date: Date()
-  });
-}
+// src/routes/student.ts
+import { Router as Router7 } from "express";
+var router7 = Router7();
+router7.put("/profile", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "STUDENT") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const { name, phone } = req.body;
+    const updatedUser = await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        ...name && { name },
+        ...phone !== void 0 && { phone }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+    res.json({
+      data: updatedUser
+    });
+  } catch (error) {
+    console.error("Error updating student profile:", error);
+    res.status(500).json({
+      error: { message: "Failed to update profile" }
+    });
+  }
+});
+router7.get("/profile", async (req, res) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers)
+    });
+    if (!session?.user || session.user.role !== "STUDENT") {
+      return res.status(401).json({
+        error: { message: "Unauthorized" }
+      });
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+    if (!user) {
+      return res.status(404).json({
+        error: { message: "Student not found" }
+      });
+    }
+    res.json({
+      data: user
+    });
+  } catch (error) {
+    console.error("Error fetching student profile:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch profile" }
+    });
+  }
+});
+var student_default = router7;
 
 // src/app.ts
-var app = express3();
+var app = express();
+console.log("=== CORS DEBUG ===");
+console.log("Raw APP_URL:", process.env.APP_URL);
+var allowedOrigins = (process.env.APP_URL || "http://localhost:3000").split(",").map((o) => o.trim().replace(/\/$/, "")).filter(Boolean);
+console.log("Processed allowedOrigins:", allowedOrigins);
+if (!allowedOrigins.includes("http://localhost:3000")) {
+  allowedOrigins.push("http://localhost:3000");
+}
+if (!allowedOrigins.includes("http://localhost:3001")) {
+  allowedOrigins.push("http://localhost:3001");
+}
+if (!allowedOrigins.includes("http://localhost:3002")) {
+  allowedOrigins.push("http://localhost:3002");
+}
+console.log("Final allowedOrigins:", allowedOrigins);
+console.log("=== END CORS DEBUG ===");
 app.use(
   cors({
-    origin: process.env.APP_URL || "http://localhost:3000",
-    // client side url
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
+      const isAllowed = allowedOrigins.some((allowed) => {
+        const normalizedAllowed = allowed.replace(/\/$/, "").toLowerCase();
+        return normalizedAllowed === normalizedOrigin;
+      });
+      if (isAllowed) return cb(null, true);
+      if (normalizedOrigin.includes("skill-bridge-client-ruddy.vercel.app")) {
+        return cb(null, true);
+      }
+      console.log("CORS rejected origin:", origin, "Allowed origins:", allowedOrigins);
+      return cb(null, false);
+    },
     credentials: true
   })
 );
-app.use(express3.json());
+app.use(express.json());
 app.all("/api/auth/*splat", toNodeHandler(auth));
-app.use("/posts", postRouter);
-app.use("/comments", commentRouter);
+app.use("/api/tutors", tutors_default);
+app.use("/api/tutor", tutor_default);
+app.use("/api/bookings", bookings_default);
+app.use("/api/categories", categories_default);
+app.use("/api/reviews", reviews_default);
+app.use("/api/admin", admin_default);
+app.use("/api/student", student_default);
 app.get("/", (req, res) => {
-  res.send("Hello, World!");
+  res.send("SkillBridge Server Running");
 });
-app.use(notFound);
-app.use(globalErrorHandler_default);
 var app_default = app;
 
 // src/index.ts
