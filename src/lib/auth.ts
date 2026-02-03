@@ -37,7 +37,8 @@ export const auth = betterAuth({
     process.env.APP_URL || "http://localhost:3000",
     "http://localhost:3000",
     "http://localhost:3001",
-    "http://192.168.0.173:3000"
+    "http://192.168.0.173:3000",
+    "https://skill-bridge-client-ruddy.vercel.app"
   ].filter(Boolean),
   emailAndPassword: {
     enabled: true,
