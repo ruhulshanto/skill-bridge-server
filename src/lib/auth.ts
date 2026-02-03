@@ -40,6 +40,19 @@ export const auth = betterAuth({
     "http://192.168.0.173:3000",
     "https://skill-bridge-client-ruddy.vercel.app"
   ].filter(Boolean),
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes
+    },
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // 1 day
+    cookieAttributes: {
+      secure: true,
+      sameSite: "none",
+      path: "/",
+    },
+  },
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
