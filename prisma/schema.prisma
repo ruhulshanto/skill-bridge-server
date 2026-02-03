@@ -16,6 +16,8 @@ model User {
   updatedAt     DateTime      @updatedAt
   role          String?       @default("USER")
   phone         String?
+  bio           String?
+  location      String?
   status        String?       @default("ACTIVE")
   accounts      Account[]
   bookings      Booking[]     @relation("StudentBookings")
