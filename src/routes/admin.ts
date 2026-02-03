@@ -399,14 +399,15 @@ router.put("/profile", async (req, res) => {
       });
     }
 
-    const { name, phone } = req.body; // Remove bio since it doesn't exist in database
+    const { name, phone, bio, location } = req.body;
 
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
         ...(name && { name }),
         ...(phone !== undefined && { phone }),
-        // bio field removed - not in database schema
+        ...(bio !== undefined && { bio }),
+        ...(location !== undefined && { location }),
       },
     });
 
