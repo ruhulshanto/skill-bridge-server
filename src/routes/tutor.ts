@@ -514,7 +514,7 @@ router.get("/stats", async (req: Request, res: Response) => {
       });
     }
 
-    const [totalBookings, completedBookings, earningsResult] = await Promise.all([
+    const [totalBookings, completedBookings, earningsResult, uniqueStudents] = await Promise.all([
       prisma.booking.count({
         where: { tutorId: tutorProfile.id },
       }),
@@ -531,15 +531,20 @@ router.get("/stats", async (req: Request, res: Response) => {
         },
         _sum: { totalAmount: true },
       }),
+      prisma.booking.groupBy({
+        by: ['studentId'],
+        where: { tutorId: tutorProfile.id },
+      }),
     ]);
 
     res.json({
       data: {
         totalSessions: totalBookings,
         completedSessions: completedBookings,
-        totalEarnings: earningsResult._sum.totalAmount ?? 0,
+        totalEarnings: Math.round((earningsResult._sum.totalAmount ?? 0) / 100),
         rating: tutorProfile.rating,
         totalReviews: tutorProfile.totalReviews,
+        totalStudents: uniqueStudents.length,
       },
     });
   } catch (error) {
