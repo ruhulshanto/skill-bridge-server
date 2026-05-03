@@ -14,64 +14,87 @@ router.get("/", async (req: Request, res: Response) => {
       page = "1",
       limit = "10",
       minRating,
+      minRate,
       maxRate,
+      free, // filter free tutors only
     } = req.query;
 
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
 
+    // Build base tutorProfile filter
     const tutorProfileWhere: any = {};
+
     if (category) {
       tutorProfileWhere.subjects = {
         some: {
-          subject: { slug: category },
+          subject: {
+            OR: [{ slug: category }, { category: { slug: category } }],
+          },
         },
       };
     }
+
     if (minRating) {
       tutorProfileWhere.rating = { gte: parseFloat(minRating as string) };
     }
-    if (maxRate) {
-      tutorProfileWhere.hourlyRate = { lte: parseInt(maxRate as string) };
+
+    // Handle price filters
+    if (free === "true") {
+      tutorProfileWhere.hourlyRate = 0;
+    } else {
+      const priceFilter: any = {};
+      if (minRate) priceFilter.gte = parseInt(minRate as string) * 100;
+      if (maxRate) priceFilter.lte = parseInt(maxRate as string) * 100;
+      if (Object.keys(priceFilter).length > 0) {
+        tutorProfileWhere.hourlyRate = priceFilter;
+      }
     }
 
+    // Build main where clause
     const where: any = {
       role: "TUTOR",
     };
 
-    // Only add tutorProfile filter if there are conditions
+    // Always apply tutorProfile filter if any conditions exist
     if (Object.keys(tutorProfileWhere).length > 0) {
       where.tutorProfile = tutorProfileWhere;
     }
 
+    // Apply search (maintains category filters via tutorProfileWhere)
     if (search) {
-      const searchConditions = [
-        { name: { contains: search, mode: "insensitive" } },
-        {
-          tutorProfile: {
-            bio: { contains: search, mode: "insensitive" },
-          },
-        },
-      ];
+      const searchTerm = (search as string).trim();
 
+      // If we have other filters (category, rating, price), combine them properly
       if (Object.keys(tutorProfileWhere).length > 0) {
-        searchConditions.push({
-          tutorProfile: tutorProfileWhere,
-        });
+        where.AND = [
+          { role: "TUTOR" },
+          {
+            OR: [
+              { name: { contains: searchTerm, mode: "insensitive" } },
+              {
+                tutorProfile: {
+                  bio: { contains: searchTerm, mode: "insensitive" },
+                },
+              },
+            ],
+          },
+          { tutorProfile: tutorProfileWhere },
+        ];
+        delete where.role;
+        delete where.tutorProfile;
+      } else {
+        // Only search filter
+        where.OR = [
+          { name: { contains: searchTerm, mode: "insensitive" } },
+          {
+            tutorProfile: {
+              bio: { contains: searchTerm, mode: "insensitive" },
+            },
+          },
+        ];
       }
-
-      where.AND = [
-        { role: "TUTOR" },
-        {
-          OR: searchConditions,
-        }
-      ];
-
-      // Remove role from where since it's now in AND
-      delete where.role;
-      // Remove tutorProfile from where since it's handled in search
-      delete where.tutorProfile;
     }
 
     const [tutors, total] = await Promise.all([
@@ -91,14 +114,19 @@ router.get("/", async (req: Request, res: Response) => {
         skip,
         take: limitNum,
         orderBy: [
-          // Order by tutors with profiles first (by rating), then by name
+          // Order by verified tutors first, then by rating, then by name
           {
             tutorProfile: {
-              rating: 'desc',
+              isVerified: "desc",
             },
           },
           {
-            name: 'asc',
+            tutorProfile: {
+              rating: "desc",
+            },
+          },
+          {
+            name: "asc",
           },
         ],
       }),
@@ -107,8 +135,57 @@ router.get("/", async (req: Request, res: Response) => {
 
     const totalPages = Math.ceil(total / limitNum);
 
+    // Convert hourly rate from cents to dollars for frontend
+    const tutorsWithDollars = tutors.map((tutor) => {
+      const plainTutor = JSON.parse(JSON.stringify(tutor));
+      if (plainTutor.tutorProfile) {
+        plainTutor.tutorProfile.hourlyRate =
+          plainTutor.tutorProfile.hourlyRate / 100;
+      }
+      return plainTutor;
+    }) as Array<Record<string, unknown> & { tutorProfile?: { id?: string } }>;
+
+    const profileIds = tutorsWithDollars
+      .map((t) => t.tutorProfile?.id)
+      .filter((id): id is string => Boolean(id));
+
+    const aggByProfile = new Map<string, { count: number; avg: number }>();
+    await Promise.all(
+      profileIds.map(async (tid) => {
+        const where = { tutorId: tid };
+        const [count, agr] = await Promise.all([
+          prisma.review.count({ where }),
+          prisma.review.aggregate({
+            where,
+            _avg: { rating: true },
+          }),
+        ]);
+        aggByProfile.set(tid, {
+          count,
+          avg:
+            count > 0
+              ? Math.round((agr._avg.rating ?? 0) * 10) / 10
+              : 0,
+        });
+      }),
+    );
+
+    for (const t of tutorsWithDollars) {
+      const tp = t.tutorProfile as
+        | {
+            id: string;
+            totalReviews?: number;
+            rating?: number;
+          }
+        | undefined;
+      if (!tp?.id) continue;
+      const agg = aggByProfile.get(tp.id);
+      tp.totalReviews = agg?.count ?? 0;
+      tp.rating = agg?.avg ?? 0;
+    }
+
     res.json({
-      data: tutors,
+      data: tutorsWithDollars,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -129,7 +206,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const tutor = await prisma.user.findFirst({
+    let tutor = await prisma.user.findFirst({
       where: {
         id: id as string,
         role: "TUTOR",
@@ -155,31 +232,94 @@ router.get("/:id", async (req: Request, res: Response) => {
       });
     }
 
-    // Get tutor's reviews
-    const reviews = await prisma.review.findMany({
-      where: {
-        booking: {
-          tutorId: id as string,
+    // If tutor doesn't have a profile, create a default one
+    if (!tutor.tutorProfile) {
+      const newProfile = await prisma.tutorProfile.create({
+        data: {
+          userId: tutor.id,
+          bio: tutor.bio || `${tutor.name} is a tutor on SkillBridge.`,
+          hourlyRate: 5000, // Default: $50/hour in cents
+          experience: 1,
+          rating: 0,
+          totalReviews: 0,
+          isVerified: false,
         },
-      },
-      include: {
-        student: {
-          select: {
-            name: true,
-            image: true,
+        include: {
+          subjects: {
+            include: {
+              subject: true,
+            },
+          },
+          availability: true,
+        },
+      });
+      tutor.tutorProfile = newProfile;
+    }
+
+    const tutorProfileId = tutor.tutorProfile!.id;
+
+    const reviewWhere = { tutorId: tutorProfileId };
+
+    const [reviews, reviewCount, reviewAgg] = await Promise.all([
+      prisma.review.findMany({
+        where: reviewWhere,
+        include: {
+          student: {
+            select: {
+              name: true,
+              image: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 10,
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 50,
+      }),
+      prisma.review.count({ where: reviewWhere }),
+      prisma.review.aggregate({
+        where: reviewWhere,
+        _avg: { rating: true },
+      }),
+    ]);
+
+    // Convert hourly rate from cents to dollars for frontend
+    const plainTutor = JSON.parse(JSON.stringify(tutor));
+    if (plainTutor.tutorProfile) {
+      plainTutor.tutorProfile.hourlyRate =
+        plainTutor.tutorProfile.hourlyRate / 100;
+      plainTutor.tutorProfile.totalReviews = reviewCount;
+      plainTutor.tutorProfile.rating =
+        reviewCount > 0
+          ? Math.round((reviewAgg._avg.rating ?? 0) * 10) / 10
+          : 0;
+    }
+
+    // Keep stored profile aggregates in sync (fixes stale seeded totals)
+    prisma.tutorProfile
+      .update({
+        where: { id: tutorProfileId },
+        data: {
+          totalReviews: reviewCount,
+          rating:
+            reviewCount > 0
+              ? Math.round((reviewAgg._avg.rating ?? 0) * 10) / 10
+              : 0,
+        },
+      })
+      .catch(() => {});
 
     res.json({
       data: {
-        ...tutor,
-        reviews,
+        ...plainTutor,
+        reviews: reviews.map((review) => ({
+          id: review.id,
+          user: review.student.name,
+          userImage: review.student.image,
+          rating: review.rating,
+          comment: review.comment ?? "",
+          createdAt: review.createdAt,
+        })),
       },
     });
   } catch (error) {
@@ -203,14 +343,8 @@ router.put("/profile", async (req: Request, res: Response) => {
       });
     }
 
-    const {
-      bio,
-      hourlyRate,
-      experience,
-      education,
-      subjects,
-      availability,
-    } = req.body;
+    const { bio, hourlyRate, experience, education, subjects, availability } =
+      req.body;
 
     // Update or create tutor profile (tutorId in TutorSubject/Availability is TutorProfile.id)
     const tutorProfile = await prisma.tutorProfile.upsert({
@@ -278,6 +412,30 @@ router.put("/profile", async (req: Request, res: Response) => {
     console.error("Error updating tutor profile:", error);
     res.status(500).json({
       error: { message: "Failed to update profile" },
+    });
+  }
+});
+
+// GET /api/tutors/stats - Get tutor price statistics
+router.get("/stats", async (_req, res) => {
+  try {
+    const stats = await prisma.tutorProfile.aggregate({
+      _min: { hourlyRate: true },
+      _max: { hourlyRate: true },
+      _avg: { hourlyRate: true },
+    });
+
+     res.json({
+       data: {
+         minPrice: (stats._min?.hourlyRate || 0) / 100,
+         maxPrice: (stats._max?.hourlyRate || 200) / 100,
+         avgPrice: (stats._avg?.hourlyRate || 50) / 100,
+       },
+     });
+  } catch (error) {
+    console.error("Error fetching tutor stats:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch tutor stats" },
     });
   }
 });

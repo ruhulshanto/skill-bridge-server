@@ -10,6 +10,8 @@ import categoriesRouter from "./routes/categories.js";
 import reviewsRouter from "./routes/reviews.js";
 import adminRouter from "./routes/admin.js";
 import studentRouter from "./routes/student.js";
+import notificationsRouter from "./routes/notifications.js";
+import aiRouter from "./routes/ai.js";
 
 const app: Application = express();
 
@@ -77,6 +79,8 @@ app.use("/api/categories", categoriesRouter);
 app.use("/api/reviews", reviewsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/student", studentRouter);
+app.use("/api/notifications", notificationsRouter);
+app.use("/api/ai", aiRouter);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("SkillBridge Server Running");

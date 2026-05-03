@@ -15,9 +15,28 @@ const transporter = nodemailer.createTransport({
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000",
-  database: prismaAdapter(prisma, {
-    provider: "postgresql",
-  }),
+  database: (authOptions) => {
+    const adapter = prismaAdapter(prisma, {
+      provider: "postgresql",
+    })(authOptions) as any;
+    
+    // Wrap delete to ignore P2025 errors (record not found)
+    const originalDelete = adapter.delete;
+    adapter.delete = async (data: any) => {
+      try { 
+        return await originalDelete(data);
+      } catch (error: any) {
+        // P2025: Record to delete does not exist.
+        if (error.code === 'P2025' || error.meta?.cause === "Record to delete does not exist.") {
+          console.log(`[AUTH DEBUG] Record already deleted, ignoring P2025 error.`);
+          return;
+        }
+        throw error;
+      }
+    };
+    
+    return adapter;
+  },
   user: {
     additionalFields: {
       role: {
@@ -48,8 +67,7 @@ export const auth = betterAuth({
   ].filter(Boolean),
   session: {
     cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60, // 5 minutes
+      enabled: false,
     },
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day

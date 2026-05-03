@@ -9,10 +9,19 @@ async function requireAdmin(req: Request, res: Response): Promise<boolean> {
   const session = await auth.api.getSession({
     headers: getHeadersInit(req.headers),
   });
-  if (!session?.user || session.user.role !== "ADMIN") {
-    res.status(403).json({ error: { message: "Forbidden" } });
+  
+  if (!session?.user) {
+    console.log("[ADMIN AUTH] No session found");
+    res.status(401).json({ error: { message: "Authentication required" } });
     return false;
   }
+  
+  if (session.user.role !== "ADMIN") {
+    console.log(`[ADMIN AUTH] User ${session.user.email} is not an ADMIN. Role: ${session.user.role}`);
+    res.status(403).json({ error: { message: "Access denied. Admin role required." } });
+    return false;
+  }
+  
   return true;
 }
 
@@ -30,35 +39,44 @@ router.get("/users", async (req, res) => {
     if (role) where.role = role;
     if (status) where.status = status;
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        include: {
-          tutorProfile: {
-            select: {
-              id: true,
-              hourlyRate: true,
-              rating: true,
-              totalReviews: true,
-            },
-          },
-        },
-        skip,
-        take: limitNum,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.user.count({ where }),
-    ]);
+     const [users, total] = await Promise.all([
+       prisma.user.findMany({
+         where,
+         include: {
+           tutorProfile: {
+             select: {
+               id: true,
+               hourlyRate: true,
+               rating: true,
+               totalReviews: true,
+             },
+           },
+         },
+         skip,
+         take: limitNum,
+         orderBy: { createdAt: "desc" },
+       }),
+       prisma.user.count({ where }),
+     ]);
 
-    res.json({
-      data: users,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum),
-      },
-    });
+     // Convert hourlyRate from cents to dollars
+     const usersWithDollars = users.map((user) => {
+       const plainUser = JSON.parse(JSON.stringify(user));
+       if (plainUser.tutorProfile) {
+         plainUser.tutorProfile.hourlyRate = plainUser.tutorProfile.hourlyRate / 100;
+       }
+       return plainUser;
+     });
+
+     res.json({
+       data: usersWithDollars,
+       pagination: {
+         page: pageNum,
+         limit: limitNum,
+         total,
+         totalPages: Math.ceil(total / limitNum),
+       },
+     });
   } catch (error) {
     console.error("Error fetching admin users:", error);
     res.status(500).json({
@@ -145,34 +163,46 @@ router.get("/bookings", async (req, res) => {
     const where: any = {};
     if (status) where.status = status;
 
-    const [bookings, total] = await Promise.all([
-      prisma.booking.findMany({
-        where,
-        include: {
-          student: true,
-          tutor: {
-            include: {
-              user: true
-            }
-          },
-          review: true,
-        },
-        skip,
-        take: limitNum,
-        orderBy: { date: "desc" },
-      }),
-      prisma.booking.count({ where }),
-    ]);
+     const [bookings, total] = await Promise.all([
+       prisma.booking.findMany({
+         where,
+         include: {
+           student: true,
+           tutor: {
+             include: {
+               user: true
+             }
+           },
+           review: true,
+         },
+         skip,
+         take: limitNum,
+         orderBy: { date: "desc" },
+       }),
+       prisma.booking.count({ where }),
+     ]);
 
-    res.json({
-      data: bookings,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum),
-      },
-    });
+     // Convert cents to dollars
+     const bookingsWithDollars = bookings.map((booking) => ({
+       ...booking,
+       totalAmount: booking.totalAmount / 100,
+       tutor: booking.tutor
+         ? {
+             ...booking.tutor,
+             hourlyRate: booking.tutor.hourlyRate / 100,
+           }
+         : null,
+     }));
+
+     res.json({
+       data: bookingsWithDollars,
+       pagination: {
+         page: pageNum,
+         limit: limitNum,
+         total,
+         totalPages: Math.ceil(total / limitNum),
+       },
+     });
   } catch (error) {
     console.error("Error fetching admin bookings:", error);
     res.status(500).json({
@@ -331,6 +361,7 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.status(201).json({
       data: {
         message: "Admin created successfully",
@@ -399,6 +430,8 @@ router.get("/profile", async (req, res) => {
       });
     }
 
+    console.log(`[ADMIN PROFILE] Fetching profile for user ${session.user.id}`);
+    
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -417,11 +450,15 @@ router.get("/profile", async (req, res) => {
     });
 
     if (!user) {
+      console.log(`[ADMIN PROFILE] User ${session.user.id} not found in DB`);
       return res.status(404).json({
         error: { message: "Admin not found" },
       });
     }
 
+    console.log(`[ADMIN PROFILE] Success! Returning data for ${user.email}. Name: ${user.name}`);
+
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.json({
       data: user,
     });
@@ -450,16 +487,42 @@ router.put("/profile", async (req, res) => {
 
     const { name, phone, bio, location } = req.body;
 
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = phone;
+    if (bio !== undefined) updateData.bio = bio;
+    if (location !== undefined) updateData.location = location;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        error: { message: "No fields to update" },
+      });
+    }
+
+    console.log(`[ADMIN PROFILE] Updating profile for user ${session.user.id}:`, updateData);
+
+    // 1. Update via Prisma - SINGLE SOURCE OF TRUTH
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: {
-        ...(name && { name }),
-        ...(phone !== undefined && { phone }),
-        ...(bio !== undefined && { bio }),
-        ...(location !== undefined && { location }),
-      },
+      data: updateData,
     });
+    
+    console.log(`[ADMIN PROFILE] Prisma update successful for ${session.user.id}`);
 
+    // 2. Update via Better Auth - Synchronize Auth state
+    try {
+      await auth.api.updateUser({
+        body: {
+          userId: session.user.id,
+          ...updateData,
+        },
+      });
+      console.log(`[ADMIN PROFILE] Auth update successful for ${session.user.id}`);
+    } catch (authError) {
+      console.error(`[ADMIN PROFILE] Auth update failed (continuing anyway):`, authError);
+    }
+
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.json({
       data: updatedUser,
     });
@@ -468,6 +531,228 @@ router.put("/profile", async (req, res) => {
     res.status(500).json({
       error: { message: "Failed to update profile" },
     });
+  }
+});
+
+// GET /api/admin/applications - Get all tutor applications
+router.get("/applications", async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const { status, page = "1", limit = "20" } = req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: any = {};
+    if (status) where.status = status;
+
+    const [applications, total] = await Promise.all([
+      prisma.tutorApplication.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, image: true }
+          }
+        },
+        skip,
+        take: limitNum,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.tutorApplication.count({ where }),
+    ]);
+
+    // Format for frontend
+    const formatted = applications.map(app => ({
+      ...app,
+      hourlyRate: app.hourlyRate / 100
+    }));
+
+    res.json({
+      data: formatted,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching applications:", error);
+    res.status(500).json({ error: { message: "Failed to fetch applications" } });
+  }
+});
+
+// GET /api/admin/applications/:id - Get specific application
+router.get("/applications/:id", async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const { id } = req.params;
+    console.log("Requested Application ID:", id);
+
+    if (!id || id === 'undefined' || id === '[id]') {
+      return res.status(400).json({ error: { message: "Invalid application ID" } });
+    }
+
+    const application = await prisma.tutorApplication.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, image: true, createdAt: true }
+        }
+      }
+    });
+
+    if (!application) {
+      console.log(`[ADMIN API] No application found in DB for ID: ${id}`);
+      return res.status(404).json({ error: { message: "Application not found in database" } });
+    }
+
+    console.log(`[ADMIN API] Success! Found application for: ${application.user.name}`);
+
+    res.json({
+      data: {
+        ...application,
+        hourlyRate: application.hourlyRate / 100
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching application detail:", error);
+    res.status(500).json({ error: { message: "Failed to fetch application details" } });
+  }
+});
+
+// PATCH /api/admin/applications/:id/approve - Approve application
+router.patch("/applications/:id/approve", async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const { id } = req.params;
+
+    const application = await prisma.tutorApplication.findUnique({
+      where: { id },
+      include: { user: true }
+    });
+
+    if (!application) {
+      return res.status(404).json({ error: { message: "Application not found" } });
+    }
+
+    if (application.status !== 'PENDING') {
+      return res.status(400).json({ error: { message: `Application is already ${application.status}` } });
+    }
+
+    // Run in transaction to ensure consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Update application status
+      const updatedApp = await tx.tutorApplication.update({
+        where: { id },
+        data: { status: 'APPROVED' }
+      });
+
+      // 2. Update user role
+      await tx.user.update({
+        where: { id: application.userId },
+        data: { role: 'TUTOR' }
+      });
+
+      // 3. Create or update TutorProfile
+      const profile = await tx.tutorProfile.upsert({
+        where: { userId: application.userId },
+        update: {
+          bio: application.bio,
+          hourlyRate: application.hourlyRate,
+          experience: application.experience,
+          education: application.education,
+          portfolioUrl: application.portfolioUrl,
+        },
+        create: {
+          userId: application.userId,
+          bio: application.bio,
+          hourlyRate: application.hourlyRate,
+          experience: application.experience,
+          education: application.education,
+          portfolioUrl: application.portfolioUrl,
+          isVerified: true // auto-verify on admin approval
+        }
+      });
+
+      // 4. Create TutorSubject entries
+      // First delete any existing to avoid duplicates if profile existed
+      await tx.tutorSubject.deleteMany({
+        where: { tutorId: profile.id }
+      });
+
+      if (application.subjectIds && application.subjectIds.length > 0) {
+        await tx.tutorSubject.createMany({
+          data: application.subjectIds.map(subjectId => ({
+            tutorId: profile.id,
+            subjectId
+          }))
+        });
+      }
+
+      // 5. Notify the user
+      await (tx as any).notification.create({
+        data: {
+          userId: application.userId,
+          title: "Application Approved!",
+          message: "Congratulations! Your application to become a tutor has been approved.",
+          type: "APPLICATION",
+          link: "/tutor/dashboard",
+        }
+      });
+
+      return updatedApp;
+    });
+
+    res.json({ data: result });
+  } catch (error) {
+    console.error("Error approving application:", error);
+    res.status(500).json({ error: { message: "Failed to approve application" } });
+  }
+});
+
+// PATCH /api/admin/applications/:id/reject - Reject application
+router.patch("/applications/:id/reject", async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const { id } = req.params;
+
+    const application = await prisma.tutorApplication.findUnique({
+      where: { id }
+    });
+
+    if (!application) {
+      return res.status(404).json({ error: { message: "Application not found" } });
+    }
+
+    const updated = await prisma.tutorApplication.update({
+      where: { id },
+      data: { status: 'REJECTED' }
+    });
+
+    // Notify the user
+    try {
+      await (prisma as any).notification.create({
+        data: {
+          userId: application.userId,
+          title: "Application Status Update",
+          message: "We've reviewed your application to become a tutor. Unfortunately, it has been rejected at this time.",
+          type: "APPLICATION",
+          link: "/become-a-tutor", // Or wherever they can see status/try again
+        }
+      });
+    } catch (notifErr) {
+      console.error("Failed to notify user of rejection:", notifErr);
+    }
+
+    res.json({ data: updated });
+  } catch (error) {
+    console.error("Error rejecting application:", error);
+    res.status(500).json({ error: { message: "Failed to reject application" } });
   }
 });
 

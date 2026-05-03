@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx tsx watch src/server.ts",
-    "seed:admin": "npx tsx src/scripts/seedAdmin.ts",
+    "seed": "npx tsx prisma/seed.ts",
     "build": "prisma generate && prisma migrate deploy && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native",
     "vercel-build": "pnpm -s run build",
     "postinstall": "prisma generate"
@@ -33,6 +33,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "groq-sdk": "^1.1.2",
     "nodemailer": "^7.0.12",
     "pg": "^8.16.3",
     "zod": "^4.3.6"

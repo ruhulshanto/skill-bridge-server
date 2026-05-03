@@ -10,7 +10,7 @@ export const createBookingSchema = z.object({
 
 export const createReviewSchema = z.object({
   bookingId: z.string().min(1, "bookingId is required"),
-  rating: z.coerce.number().min(1).max(5).default(5),
+  rating: z.coerce.number().min(1).max(5),
   comment: z.string().optional(),
 });
 

@@ -7,23 +7,25 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  name          String
-  email         String        @unique
-  emailVerified Boolean       @default(false)
-  image         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  role          String?       @default("USER")
-  phone         String?
-  bio           String?
-  location      String?
-  status        String?       @default("ACTIVE")
-  accounts      Account[]
-  bookings      Booking[]     @relation("StudentBookings")
-  reviews       Review[]
-  sessions      Session[]
-  tutorProfile  TutorProfile?
+  id                String             @id @default(cuid())
+  name              String
+  email             String             @unique
+  emailVerified     Boolean            @default(false)
+  image             String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  role              Role               @default(STUDENT)
+  phone             String?
+  bio               String?
+  location          String?
+  status            String?            @default("ACTIVE")
+  tutorApplications TutorApplication[]
+  accounts          Account[]
+  bookings          Booking[]          @relation("StudentBookings")
+  reviews           Review[]
+  sessions          Session[]
+  tutorProfile      TutorProfile?
+  notifications     Notification[]
 
   @@map("users")
 }
@@ -74,6 +76,34 @@ model Verification {
   @@map("verifications")
 }
 
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  icon        String?
+  color       String?   @default("#3B82F6")
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  subjects    Subject[]
+
+  @@map("categories")
+}
+
+model Subject {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  slug          String         @unique
+  description   String?
+  icon          String?
+  categoryId    String?
+  category      Category?      @relation(fields: [categoryId], references: [id])
+  tutorSubjects TutorSubject[]
+
+  @@map("subjects")
+}
+
 model TutorProfile {
   id           String         @id @default(cuid())
   userId       String         @unique
@@ -86,23 +116,14 @@ model TutorProfile {
   isVerified   Boolean        @default(false)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+  portfolioUrl String?
   availability Availability[]
   bookings     Booking[]
+  reviews      Review[]
   user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   subjects     TutorSubject[]
 
   @@map("tutor_profiles")
-}
-
-model Subject {
-  id            String         @id @default(cuid())
-  name          String         @unique
-  slug          String         @unique
-  description   String?
-  icon          String?
-  tutorSubjects TutorSubject[]
-
-  @@map("subjects")
 }
 
 model TutorSubject {
@@ -147,21 +168,43 @@ model Booking {
   tutor       TutorProfile  @relation(fields: [tutorId], references: [id], onDelete: Cascade)
   review      Review?
 
+  @@index([studentId])
+  @@index([tutorId])
   @@map("bookings")
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  bookingId String   @unique
+  id        String       @id @default(cuid())
+  bookingId String       @unique
   studentId String
+  tutorId   String
   rating    Int
   comment   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  booking   Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  student   User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tutor     TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
 
+  @@index([studentId])
+  @@index([tutorId])
   @@map("reviews")
+}
+
+model TutorApplication {
+  id           String            @id @default(cuid())
+  userId       String
+  bio          String
+  expertise    String
+  education    String?
+  portfolioUrl String?
+  experience   Int
+  hourlyRate   Int
+  subjectIds   String[]
+  status       ApplicationStatus @default(PENDING)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
@@ -174,4 +217,27 @@ enum BookingStatus {
   CONFIRMED
   COMPLETED
   CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title     String
+  message   String
+  type      String   // "APPLICATION", "REVIEW"
+  link      String?
+  isRead    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
 }

@@ -22,34 +22,37 @@ router.put("/profile", async (req, res) => {
     console.log("📝 Update request for user:", session.user.id, { name, phone, bio, location });
 
     const updateData: any = {};
-    if (name) updateData.name = name;
+    if (name !== undefined) updateData.name = name;
     if (phone !== undefined) updateData.phone = phone;
-    
-    // Only include bio and location if they are provided, 
-    // but the user mentioned they might not be in the DB yet.
-    // We'll keep them for future compatibility if the schema has them.
     if (bio !== undefined) updateData.bio = bio;
     if (location !== undefined) updateData.location = location;
 
     console.log("📊 Final update data:", updateData);
 
+    console.log(`[STUDENT PROFILE] Updating profile for user ${session.user.id}:`, updateData);
+
+    // 1. Update via Prisma - SINGLE SOURCE OF TRUTH
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: updateData,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        bio: true,
-        location: true,
-        role: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
+    
+    console.log(`[STUDENT PROFILE] Prisma update successful for ${session.user.id}`);
 
+    // 2. Update via Better Auth - Synchronize Auth state
+    try {
+      await auth.api.updateUser({
+        body: {
+          userId: session.user.id,
+          ...updateData,
+        },
+      });
+      console.log(`[STUDENT PROFILE] Auth update successful for ${session.user.id}`);
+    } catch (authError) {
+      console.error(`[STUDENT PROFILE] Auth update failed:`, authError);
+    }
+
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.json({
       data: updatedUser,
     });
@@ -96,6 +99,7 @@ router.get("/profile", async (req, res) => {
       });
     }
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.json({
       data: user,
     });

@@ -50,7 +50,7 @@ router.post("/", async (req, res) => {
 
     // Check for booking conflicts (tutorId in Booking is TutorProfile.id)
     // Parse the date as local date to avoid timezone issues
-    const [year, month, day] = date.split('-').map(Number);
+    const [year, month, day] = date.split("-").map(Number);
     const bookingDate = new Date(year!, month! - 1, day!); // month is 0-indexed in JS
 
     const existingBooking = await prisma.booking.findFirst({
@@ -115,8 +115,17 @@ router.post("/", async (req, res) => {
       },
     });
 
+    // Convert cents to dollars for frontend
+    const plainBooking = JSON.parse(JSON.stringify(booking));
+    if (plainBooking.totalAmount !== undefined) {
+      plainBooking.totalAmount = plainBooking.totalAmount / 100;
+    }
+    if (plainBooking.tutor) {
+      plainBooking.tutor.hourlyRate = plainBooking.tutor.hourlyRate / 100;
+    }
+
     res.status(201).json({
-      data: booking,
+      data: plainBooking,
     });
   } catch (error) {
     console.error("Error creating booking:", error);
@@ -157,9 +166,14 @@ router.get("/", async (req, res) => {
         where,
         include: {
           tutor: {
-            include: {
+            select: {
+              id: true,
+              hourlyRate: true,
+              rating: true,
+              totalReviews: true,
               user: {
                 select: {
+                  id: true,
                   name: true,
                   email: true,
                   image: true,
@@ -180,8 +194,20 @@ router.get("/", async (req, res) => {
 
     const totalPages = Math.ceil(total / limitNum);
 
+    // Convert cents to dollars for frontend
+    const bookingsWithDollars = bookings.map((booking) => {
+      const plainBooking = JSON.parse(JSON.stringify(booking));
+      if (plainBooking.totalAmount !== undefined) {
+        plainBooking.totalAmount = plainBooking.totalAmount / 100;
+      }
+      if (plainBooking.tutor) {
+        plainBooking.tutor.hourlyRate = plainBooking.tutor.hourlyRate / 100;
+      }
+      return plainBooking;
+    });
+
     res.json({
-      data: bookings,
+      data: bookingsWithDollars,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -227,7 +253,12 @@ router.get("/my", async (req, res) => {
       if (!profile) {
         return res.json({
           data: [],
-          pagination: { page: pageNum, limit: limitNum, total: 0, totalPages: 0 },
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: 0,
+            totalPages: 0,
+          },
         });
       }
       where.tutorId = profile.id;
@@ -251,12 +282,14 @@ router.get("/my", async (req, res) => {
             select: {
               id: true,
               hourlyRate: true,
-            },
-            include: {
+              rating: true,
+              totalReviews: true,
               user: {
                 select: {
+                  id: true,
                   name: true,
                   image: true,
+                  email: true,
                 },
               },
             },
@@ -274,8 +307,20 @@ router.get("/my", async (req, res) => {
 
     const totalPages = Math.ceil(total / limitNum);
 
+    // Convert cents to dollars for frontend
+    const bookingsWithDollars = bookings.map((booking) => {
+      const plainBooking = JSON.parse(JSON.stringify(booking));
+      if (plainBooking.totalAmount !== undefined) {
+        plainBooking.totalAmount = plainBooking.totalAmount / 100;
+      }
+      if (plainBooking.tutor) {
+        plainBooking.tutor.hourlyRate = plainBooking.tutor.hourlyRate / 100;
+      }
+      return plainBooking;
+    });
+
     res.json({
-      data: bookings,
+      data: bookingsWithDollars,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -320,7 +365,10 @@ router.patch("/:id", async (req, res) => {
     }
 
     // Check permissions
-    if (session.user.role === "STUDENT" && booking.studentId !== session.user.id) {
+    if (
+      session.user.role === "STUDENT" &&
+      booking.studentId !== session.user.id
+    ) {
       return res.status(403).json({
         error: { message: "Forbidden" },
       });
@@ -340,34 +388,37 @@ router.patch("/:id", async (req, res) => {
 
     // Update booking
     const updateData: any = { status };
-    
+
     // Handle rescheduling if date/time is provided
     if (date || startTime || endTime) {
       // Only students can reschedule their own bookings
-      if (session.user.role !== "STUDENT" || booking.studentId !== session.user.id) {
+      if (
+        session.user.role !== "STUDENT" ||
+        booking.studentId !== session.user.id
+      ) {
         return res.status(403).json({
           error: { message: "Only students can reschedule their own bookings" },
         });
       }
-      
+
       // Check if booking can be rescheduled (only confirmed bookings)
       if (booking.status !== "CONFIRMED") {
         return res.status(400).json({
           error: { message: "Only confirmed bookings can be rescheduled" },
         });
       }
-      
+
       // Prepare new date/time
       let newDate = booking.date;
       if (date) {
         // Parse date as local date to avoid timezone issues
-        const [year, month, day] = date.split('-').map(Number);
+        const [year, month, day] = date.split("-").map(Number);
         newDate = new Date(year, month - 1, day);
       }
-      
+
       const newStartTime = startTime || booking.startTime;
       const newEndTime = endTime || booking.endTime;
-      
+
       // Check for conflicts with new time slot
       const conflictBooking = await prisma.booking.findFirst({
         where: {
@@ -393,13 +444,13 @@ router.patch("/:id", async (req, res) => {
           ],
         },
       });
-      
+
       if (conflictBooking) {
         return res.status(409).json({
           error: { message: "Time slot already booked" },
         });
       }
-      
+
       updateData.date = newDate;
       updateData.startTime = newStartTime;
       updateData.endTime = newEndTime;
@@ -430,8 +481,20 @@ router.patch("/:id", async (req, res) => {
       },
     });
 
+    // Convert cents to dollars
+    const updatedBookingWithDollars = {
+      ...updatedBooking,
+      totalAmount: updatedBooking.totalAmount / 100,
+      tutor: updatedBooking.tutor
+        ? {
+            ...updatedBooking.tutor,
+            hourlyRate: updatedBooking.tutor.hourlyRate / 100,
+          }
+        : null,
+    };
+
     res.json({
-      data: updatedBooking,
+      data: updatedBookingWithDollars,
     });
   } catch (error) {
     console.error("Error updating booking:", error);
@@ -508,8 +571,20 @@ router.get("/:id", async (req, res) => {
       });
     }
 
+    // Convert cents to dollars
+    const bookingWithDollars = {
+      ...booking,
+      totalAmount: booking.totalAmount / 100,
+      tutor: booking.tutor
+        ? {
+            ...booking.tutor,
+            hourlyRate: booking.tutor.hourlyRate / 100,
+          }
+        : null,
+    };
+
     res.json({
-      data: booking,
+      data: bookingWithDollars,
     });
   } catch (error) {
     console.error("Error fetching booking:", error);

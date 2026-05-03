@@ -36,11 +36,11 @@ router.get("/profile", async (req: Request, res: Response) => {
       });
     }
 
-    // Convert hourly rate from cents to dollars for frontend
-    const profileForFrontend = {
-      ...tutorProfile,
-      hourlyRate: Math.round(tutorProfile.hourlyRate / 100), // Convert cents to dollars
-    };
+     // Convert hourly rate from cents to dollars for frontend
+     const profileForFrontend = {
+       ...tutorProfile,
+       hourlyRate: tutorProfile.hourlyRate / 100, // Convert cents to dollars
+     };
 
     res.json({
       data: profileForFrontend,
@@ -96,7 +96,7 @@ router.get("/stats", async (req: Request, res: Response) => {
       data: {
         totalSessions,
         completedSessions,
-        totalEarnings: Math.round(totalEarnings / 100), // Convert cents to dollars
+        totalEarnings: totalEarnings / 100, // Convert cents to dollars
         rating: Math.round(averageRating * 10) / 10,
         totalReviews,
       },
@@ -164,7 +164,7 @@ router.get("/bookings", async (req: Request, res: Response) => {
     ]);
 
     res.json({
-      data: bookings,
+      data: bookings.map(b => ({ ...b, totalAmount: (b.totalAmount || 0) / 100 })),
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -408,11 +408,11 @@ router.put("/profile", async (req: Request, res: Response) => {
       },
     });
 
-    // Convert hourly rate from cents to dollars for frontend response
-    const profileForFrontend = updatedProfile ? {
-      ...updatedProfile,
-      hourlyRate: Math.round(updatedProfile.hourlyRate / 100), // Convert cents to dollars
-    } : null;
+     // Convert hourly rate from cents to dollars for frontend response
+     const profileForFrontend = updatedProfile ? {
+       ...updatedProfile,
+       hourlyRate: updatedProfile.hourlyRate / 100, // Convert cents to dollars
+     } : null;
 
     res.json({
       data: profileForFrontend,
@@ -663,6 +663,140 @@ router.get("/students", async (req: Request, res: Response) => {
     res.status(500).json({
       error: { message: "Failed to fetch students" },
     });
+  }
+});
+
+// GET /api/tutor/application - Get current application status
+router.get("/application", async (req: Request, res: Response) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers),
+    });
+
+    if (!session?.user) {
+      return res.status(401).json({ error: { message: "Unauthorized" } });
+    }
+
+    const application = await prisma.tutorApplication.findFirst({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ data: application });
+  } catch (error) {
+    console.error("Error fetching tutor application:", error);
+    res.status(500).json({ error: { message: "Internal server error" } });
+  }
+});
+
+// POST /api/tutor/apply - Submit tutor application
+router.post("/apply", async (req: Request, res: Response) => {
+  try {
+    console.log("[DEBUG] Tutor Application Hit");
+    const session = await auth.api.getSession({
+      headers: getHeadersInit(req.headers),
+    });
+
+    if (!session?.user) {
+      console.log("[DEBUG] Unauthorized application attempt");
+      return res.status(401).json({ error: { message: "Unauthorized" } });
+    }
+
+    // Check if already pending or approved
+    const existing = await prisma.tutorApplication.findFirst({
+      where: { 
+        userId: session.user.id,
+        status: { in: ['PENDING', 'APPROVED'] }
+      }
+    });
+
+    if (existing) {
+      return res.status(400).json({ 
+        error: { message: `You already have a ${existing.status.toLowerCase()} application.` } 
+      });
+    }
+
+    const { expertise, bio, experience, hourlyRate, subjects, education, portfolioUrl } = req.body;
+
+    // Strict validation
+    if (!expertise || !bio || !experience || !hourlyRate || !subjects) {
+      return res.status(400).json({ error: { message: "Missing required fields" } });
+    }
+
+    const parsedExperience = parseInt(experience, 10);
+    const parsedHourlyRate = parseInt(hourlyRate, 10) * 100; // to cents
+
+    if (isNaN(parsedExperience) || isNaN(parsedHourlyRate)) {
+      return res.status(400).json({ error: { message: "Invalid experience or hourly rate" } });
+    }
+
+    // Process subjects string into Subject records
+    const subjectsArray = subjects.split(',').map((s: string) => s.trim()).filter(Boolean);
+    const subjectIds: string[] = [];
+
+    for (const subjName of subjectsArray) {
+      let subject = await prisma.subject.findFirst({
+        where: { name: { equals: subjName, mode: 'insensitive' } }
+      });
+      
+      if (!subject) {
+        const slug = subjName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        // Check if slug exists to avoid unique constraint violation
+        let existingSlug = await prisma.subject.findUnique({ where: { slug } });
+        if (existingSlug) {
+          subjectIds.push(existingSlug.id);
+          continue;
+        }
+        subject = await prisma.subject.create({
+          data: { name: subjName, slug }
+        });
+      }
+      subjectIds.push(subject.id);
+    }
+
+    const application = await prisma.tutorApplication.create({
+      data: {
+        userId: session.user.id,
+        expertise,
+        bio,
+        education: education || null,
+        portfolioUrl: portfolioUrl || null,
+        experience: parsedExperience,
+        hourlyRate: parsedHourlyRate,
+        subjectIds,
+        status: 'PENDING'
+      }
+    });
+
+    // ── Create Notifications for Admins ──
+    try {
+      const admins = await prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { id: true }
+      });
+
+      console.log(`Found ${admins.length} admins to notify.`);
+
+      if (admins.length > 0) {
+        const result = await (prisma as any).notification.createMany({
+          data: admins.map(admin => ({
+            userId: admin.id,
+            title: "New Tutor Application",
+            message: `${session.user.name || 'A user'} has applied to become a tutor.`,
+            type: "APPLICATION",
+            link: `/admin/applications/${application.id}`,
+          }))
+        });
+        console.log(`Successfully created ${result.count} notifications for admins.`);
+      }
+    } catch (notifError) {
+      console.error("Failed to create admin notifications:", notifError);
+    }
+
+    res.status(201).json({ data: application });
+  } catch (error) {
+    console.error("Error submitting application:", error);
+    res.status(500).json({ error: { message: "Internal server error" } });
   }
 });
 
