@@ -88,7 +88,11 @@ export const auth = betterAuth({
     sendOnSignUp: false,
     autoSignInAfterVerification: true,
   },
-
+  secret: process.env.BETTER_AUTH_SECRET,
+  trustHost: true,
+  advanced: {
+    useSecureCookies: true,
+  },
   socialProviders: {
     google: {
       prompt: "select_account consent",
