@@ -14,7 +14,11 @@ const transporter = nodemailer.createTransport({
 });
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000",
+  baseURL: process.env.APP_URL || "https://skill-bridge-client-ruddy.vercel.app",
+  trustHost: true,
+  advanced: {
+    useSecureCookies: true,
+  },
   database: (authOptions) => {
     const adapter = prismaAdapter(prisma, {
       provider: "postgresql",
@@ -89,10 +93,6 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
   },
   secret: process.env.BETTER_AUTH_SECRET,
-  trustHost: true,
-  advanced: {
-    useSecureCookies: true,
-  },
   socialProviders: {
     google: {
       prompt: "select_account consent",
