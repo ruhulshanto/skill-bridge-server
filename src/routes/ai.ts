@@ -3,16 +3,24 @@ import Groq from "groq-sdk";
 
 const router = express.Router();
 
-// Initialize Groq Client
-const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY,
-});
+// Initialize Groq Client lazily to prevent boot-time crashes if key is missing
+let groq: Groq | null = null;
+
+const getGroqClient = () => {
+    if (!groq && process.env.GROQ_API_KEY) {
+        groq = new Groq({
+            apiKey: process.env.GROQ_API_KEY,
+        });
+    }
+    return groq;
+};
 
 router.get("/health", (req, res) => {
     res.json({ 
         status: "ok", 
         message: "AI Service (Groq) is reachable", 
-        hasKey: !!process.env.GROQ_API_KEY 
+        hasKey: !!process.env.GROQ_API_KEY,
+        env: process.env.NODE_ENV
     });
 });
 
@@ -91,7 +99,12 @@ router.post("/chat", async (req, res) => {
 
         console.log(`AI REQUEST (Groq): Processing message using llama-3.1-8b-instant...`);
         
-        const completion = await groq.chat.completions.create({
+        const client = getGroqClient();
+        if (!client) {
+            throw new Error("Groq client not initialized. Check GROQ_API_KEY.");
+        }
+
+        const completion = await client.chat.completions.create({
             messages: messages,
             model: "llama-3.1-8b-instant",
             temperature: 0.7,

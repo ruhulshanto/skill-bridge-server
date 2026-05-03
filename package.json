@@ -7,9 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx tsx watch src/server.ts",
     "seed": "npx tsx prisma/seed.ts",
-    "build": "prisma generate && prisma migrate deploy && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native",
-    "vercel-build": "pnpm -s run build",
-    "postinstall": "prisma generate"
+    "build": "pnpm run build:vercel",
+    "build:vercel": "prisma generate && tsup --config tsup.config.ts",
+    "postinstall": "prisma generate && pnpm run build:vercel"
+  },
+  "engines": {
+    "node": "20.x"
   },
   "keywords": [],
   "author": "",
