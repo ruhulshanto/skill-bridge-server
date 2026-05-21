@@ -11,17 +11,17 @@ import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 var connectionString = process.env.DATABASE_URL;
-if (connectionString && !connectionString.includes("sslmode=")) {
-  const separator = connectionString.includes("?") ? "&" : "?";
-  connectionString += `${separator}sslmode=verify-full`;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not set in environment variables.");
 }
 var globalForPrisma = global;
 var pool = new Pool({
   connectionString,
   max: 1,
-  // Crucial for serverless: every function instance gets 1 connection.
   idleTimeoutMillis: 3e4,
-  connectionTimeoutMillis: 1e4
+  connectionTimeoutMillis: 1e4,
+  // Ensure SSL is handled correctly for Neon/Managed DBs
+  ssl: connectionString.includes("localhost") || connectionString.includes("127.0.0.1") ? false : { rejectUnauthorized: false }
 });
 pool.on("error", (err) => {
   console.error("Unexpected error on idle PG client", err);
@@ -48,7 +48,11 @@ var transporter = nodemailer.createTransport({
   }
 });
 var auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000",
+  baseURL: process.env.APP_URL || "https://skill-bridge-client-ruddy.vercel.app",
+  trustHost: true,
+  advanced: {
+    useSecureCookies: true
+  },
   database: (authOptions) => {
     const adapter2 = prismaAdapter(prisma, {
       provider: "postgresql"
@@ -120,6 +124,7 @@ var auth = betterAuth({
     sendOnSignUp: false,
     autoSignInAfterVerification: true
   },
+  secret: process.env.BETTER_AUTH_SECRET,
   socialProviders: {
     google: {
       prompt: "select_account consent",
@@ -2752,14 +2757,21 @@ var notifications_default = router8;
 import express from "express";
 import Groq from "groq-sdk";
 var router9 = express.Router();
-var groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY
-});
+var groq = null;
+var getGroqClient = () => {
+  if (!groq && process.env.GROQ_API_KEY) {
+    groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY
+    });
+  }
+  return groq;
+};
 router9.get("/health", (req, res) => {
   res.json({
     status: "ok",
     message: "AI Service (Groq) is reachable",
-    hasKey: !!process.env.GROQ_API_KEY
+    hasKey: !!process.env.GROQ_API_KEY,
+    env: process.env.NODE_ENV
   });
 });
 var requestCount = 0;
@@ -2822,7 +2834,11 @@ router9.post("/chat", async (req, res) => {
       content: message
     });
     console.log(`AI REQUEST (Groq): Processing message using llama-3.1-8b-instant...`);
-    const completion = await groq.chat.completions.create({
+    const client = getGroqClient();
+    if (!client) {
+      throw new Error("Groq client not initialized. Check GROQ_API_KEY.");
+    }
+    const completion = await client.chat.completions.create({
       messages,
       model: "llama-3.1-8b-instant",
       temperature: 0.7,
@@ -2895,8 +2911,8 @@ app.get("/", (req, res) => {
 });
 var app_default = app;
 
-// src/index.ts
-var index_default = app_default;
+// src/vercel.ts
+var vercel_default = app_default;
 export {
-  index_default as default
+  vercel_default as default
 };

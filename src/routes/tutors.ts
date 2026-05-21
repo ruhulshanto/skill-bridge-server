@@ -19,8 +19,8 @@ router.get("/", async (req: Request, res: Response) => {
       free, // filter free tutors only
     } = req.query;
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 10));
     const skip = (pageNum - 1) * limitNum;
 
     // Build base tutorProfile filter
@@ -145,44 +145,8 @@ router.get("/", async (req: Request, res: Response) => {
       return plainTutor;
     }) as Array<Record<string, unknown> & { tutorProfile?: { id?: string } }>;
 
-    const profileIds = tutorsWithDollars
-      .map((t) => t.tutorProfile?.id)
-      .filter((id): id is string => Boolean(id));
-
-    const aggByProfile = new Map<string, { count: number; avg: number }>();
-    await Promise.all(
-      profileIds.map(async (tid) => {
-        const where = { tutorId: tid };
-        const [count, agr] = await Promise.all([
-          prisma.review.count({ where }),
-          prisma.review.aggregate({
-            where,
-            _avg: { rating: true },
-          }),
-        ]);
-        aggByProfile.set(tid, {
-          count,
-          avg:
-            count > 0
-              ? Math.round((agr._avg.rating ?? 0) * 10) / 10
-              : 0,
-        });
-      }),
-    );
-
-    for (const t of tutorsWithDollars) {
-      const tp = t.tutorProfile as
-        | {
-            id: string;
-            totalReviews?: number;
-            rating?: number;
-          }
-        | undefined;
-      if (!tp?.id) continue;
-      const agg = aggByProfile.get(tp.id);
-      tp.totalReviews = agg?.count ?? 0;
-      tp.rating = agg?.avg ?? 0;
-    }
+    // Ratings and totalReviews are already persisted and synchronized on tutorProfile in the database,
+    // so we don't need to recalculate them dynamically. This prevents mismatches between SQL where clauses and display value.
 
     res.json({
       data: tutorsWithDollars,
@@ -197,6 +161,30 @@ router.get("/", async (req: Request, res: Response) => {
     console.error("Error fetching tutors:", error);
     res.status(500).json({
       error: { message: "Failed to fetch tutors" },
+    });
+  }
+});
+
+// GET /api/tutors/stats - Get tutor price statistics
+router.get("/stats", async (_req, res) => {
+  try {
+    const stats = await prisma.tutorProfile.aggregate({
+      _min: { hourlyRate: true },
+      _max: { hourlyRate: true },
+      _avg: { hourlyRate: true },
+    });
+
+     res.json({
+       data: {
+         minPrice: (stats._min?.hourlyRate || 0) / 100,
+         maxPrice: (stats._max?.hourlyRate || 200) / 100,
+         avgPrice: (stats._avg?.hourlyRate || 50) / 100,
+       },
+     });
+  } catch (error) {
+    console.error("Error fetching tutor stats:", error);
+    res.status(500).json({
+      error: { message: "Failed to fetch tutor stats" },
     });
   }
 });
@@ -412,30 +400,6 @@ router.put("/profile", async (req: Request, res: Response) => {
     console.error("Error updating tutor profile:", error);
     res.status(500).json({
       error: { message: "Failed to update profile" },
-    });
-  }
-});
-
-// GET /api/tutors/stats - Get tutor price statistics
-router.get("/stats", async (_req, res) => {
-  try {
-    const stats = await prisma.tutorProfile.aggregate({
-      _min: { hourlyRate: true },
-      _max: { hourlyRate: true },
-      _avg: { hourlyRate: true },
-    });
-
-     res.json({
-       data: {
-         minPrice: (stats._min?.hourlyRate || 0) / 100,
-         maxPrice: (stats._max?.hourlyRate || 200) / 100,
-         avgPrice: (stats._avg?.hourlyRate || 50) / 100,
-       },
-     });
-  } catch (error) {
-    console.error("Error fetching tutor stats:", error);
-    res.status(500).json({
-      error: { message: "Failed to fetch tutor stats" },
     });
   }
 });
